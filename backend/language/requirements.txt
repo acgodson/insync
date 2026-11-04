@@ -1,0 +1,11 @@
+anthropic>=0.75        # structured outputs (output_config)
+numpy
+httpx                  # ElevenLabs API
+faster-whisper         # local STT
+fastapi                # WebSocket server (language/server.py)
+uvicorn[standard]
+websockets             # fake_app client
+edge-tts               # free fallback voices incl. Nigerian English (needs internet)
+# optional
+sounddevice            # `mic` command in the CLI
+pytest                 # tests

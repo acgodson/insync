@@ -1,0 +1,29 @@
+{
+ "gloss": [
+  {"text": "Hello Alice!", "include": ["HELLO"], "fingerspell": ["ALICE"]},
+  {"text": "What is your name?", "include": ["WHAT", "YOU", "NAME"]},
+  {"text": "Excuse me, where can I find the loo?", "include": ["WHERE", "TOILET"]},
+  {"text": "Could you say that one more time, please?", "include": ["AGAIN"]},
+  {"text": "Please open your textbook. Chidi will help you.", "include": ["BOOK", "HELP"], "fingerspell": ["CHIDI"]},
+  {"text": "Do you understand the lesson?", "include": ["YOU", "UNDERSTAND"]},
+  {"text": "There is a fire, everybody stop and leave now!", "include": ["FIRE", "STOP"]},
+  {"text": "Tomorrow we will learn about photosynthesis.", "include": ["TOMORROW", "LEARN"], "first": "TOMORROW"},
+  {"text": "Are you feeling sick? Should I call a nurse?", "include": ["SICK", "DOCTOR"]},
+  {"text": "Um, okay, so, uh...", "max_items": 0},
+  {"text": "Good job, well done, I am very happy with your work today, thank you.", "include": ["GOOD", "THANK-YOU"], "max_items": 8}
+ ],
+ "pick": [
+  {"history": [["bob", "Are you thirsty?"]], "so_far": ["I", "WANT"], "candidates": [["NAME", 0.70], ["WATER", 0.66]], "expect": "WATER"},
+  {"history": [["bob", "What is your name?"]], "so_far": ["I"], "candidates": [["WATER", 0.70], ["NAME", 0.66]], "expect": "NAME"},
+  {"history": [["bob", "Did you finish reading chapter two?"]], "so_far": ["I"], "candidates": [["WRITE", 0.68], ["READ", 0.66], ["BOOK", 0.5]], "expect": "READ"},
+  {"history": [["bob", "Do you understand?"]], "so_far": ["I", "NO"], "candidates": [["KNOW", 0.67], ["UNDERSTAND", 0.65]], "expect": "UNDERSTAND"}
+ ],
+ "compose": [
+  {"history": [], "signs": ["I", "WANT", "WATER"], "contains": ["water"]},
+  {"history": [], "signs": ["YOU", "NAME", "WHAT"], "contains": ["name"], "ends": "?"},
+  {"history": [["bob", "Do you understand the lesson?"]], "signs": ["I", "NO", "UNDERSTAND"], "contains_any": ["don't understand", "do not understand"]},
+  {"history": [], "signs": ["TOMORROW", "I", "GO", "DOCTOR"], "contains": ["tomorrow", "doctor"]},
+  {"history": [["bob", "Where is your book?"]], "signs": ["BOOK", "HOME"], "contains": ["home"]},
+  {"history": [], "signs": ["TOILET", "WHERE"], "contains": ["toilet"], "ends": "?"}
+ ]
+}

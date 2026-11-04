@@ -1,0 +1,625 @@
+{
+ "language": "NSL",
+ "language_name": "Nigerian Sign Language",
+ "version": 1,
+ "label_format": "UPPERCASE gloss, hyphen for multi-word (CANT-BREATHE). Must match recognition library labels exactly.",
+ "grammar_notes": [
+  "PLACEHOLDER - confirm every line with our native signer before the demo; edit freely.",
+  "Articles (a, an, the) and the copula (is, are, am) are usually not signed.",
+  "Time signs (NOW, TODAY, TOMORROW, YESTERDAY, FINISH) tend to come first and carry tense.",
+  "Question words may come at the end of the sentence.",
+  "Pronouns: I/me/my map to I, you/your map to YOU (possessive form handled by the signer's movement)."
+ ],
+ "signs": [
+  {
+   "label": "HELLO",
+   "english": "hello",
+   "synonyms": [
+    "hi",
+    "hey",
+    "good morning",
+    "good afternoon",
+    "good evening",
+    "welcome"
+   ],
+   "category": "social",
+   "tier": 1,
+   "emergency": false,
+   "speak": "Hello!"
+  },
+  {
+   "label": "THANK-YOU",
+   "english": "thank you",
+   "synonyms": [
+    "thanks",
+    "thank",
+    "grateful"
+   ],
+   "category": "social",
+   "tier": 1,
+   "emergency": false,
+   "speak": "Thank you."
+  },
+  {
+   "label": "YES",
+   "english": "yes",
+   "synonyms": [
+    "yeah",
+    "sure",
+    "correct"
+   ],
+   "category": "social",
+   "tier": 1,
+   "emergency": false,
+   "speak": "Yes."
+  },
+  {
+   "label": "NO",
+   "english": "no",
+   "synonyms": [
+    "not",
+    "nope",
+    "don't",
+    "doesn't",
+    "didn't",
+    "never"
+   ],
+   "category": "social",
+   "tier": 1,
+   "emergency": false,
+   "speak": "No."
+  },
+  {
+   "label": "NAME",
+   "english": "name",
+   "synonyms": [
+    "called",
+    "named"
+   ],
+   "category": "people",
+   "tier": 1,
+   "emergency": false
+  },
+  {
+   "label": "I",
+   "english": "I",
+   "synonyms": [
+    "me",
+    "my",
+    "mine",
+    "myself"
+   ],
+   "category": "people",
+   "tier": 1,
+   "emergency": false
+  },
+  {
+   "label": "YOU",
+   "english": "you",
+   "synonyms": [
+    "your",
+    "yours",
+    "yourself"
+   ],
+   "category": "people",
+   "tier": 1,
+   "emergency": false
+  },
+  {
+   "label": "HELP",
+   "english": "help",
+   "synonyms": [
+    "assist",
+    "emergency",
+    "help me"
+   ],
+   "category": "emergency",
+   "tier": 1,
+   "emergency": true,
+   "speak": "Help! I need help."
+  },
+  {
+   "label": "PAIN",
+   "english": "pain",
+   "synonyms": [
+    "hurt",
+    "hurts",
+    "ache",
+    "painful",
+    "sore",
+    "injured"
+   ],
+   "category": "emergency",
+   "tier": 1,
+   "emergency": true,
+   "speak": "I'm in pain."
+  },
+  {
+   "label": "FIRE",
+   "english": "fire",
+   "synonyms": [
+    "burning",
+    "flames",
+    "smoke"
+   ],
+   "category": "emergency",
+   "tier": 1,
+   "emergency": true,
+   "speak": "Fire! There's a fire!"
+  },
+  {
+   "label": "CANT-BREATHE",
+   "english": "can't breathe",
+   "synonyms": [
+    "cannot breathe",
+    "breathing",
+    "breathe",
+    "choking"
+   ],
+   "category": "emergency",
+   "tier": 2,
+   "emergency": true,
+   "speak": "I can't breathe!"
+  },
+  {
+   "label": "STOP",
+   "english": "stop",
+   "synonyms": [
+    "halt",
+    "enough"
+   ],
+   "category": "emergency",
+   "tier": 2,
+   "emergency": true,
+   "speak": "Stop!"
+  },
+  {
+   "label": "DOCTOR",
+   "english": "doctor",
+   "synonyms": [
+    "nurse",
+    "clinic",
+    "hospital",
+    "medic"
+   ],
+   "category": "people",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "PLEASE",
+   "english": "please",
+   "synonyms": [],
+   "category": "social",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "SORRY",
+   "english": "sorry",
+   "synonyms": [
+    "apologise",
+    "apologize",
+    "excuse me",
+    "pardon"
+   ],
+   "category": "social",
+   "tier": 2,
+   "emergency": false,
+   "speak": "Sorry."
+  },
+  {
+   "label": "GOODBYE",
+   "english": "goodbye",
+   "synonyms": [
+    "bye",
+    "see you",
+    "see you later"
+   ],
+   "category": "social",
+   "tier": 2,
+   "emergency": false,
+   "speak": "Goodbye!"
+  },
+  {
+   "label": "WHAT",
+   "english": "what",
+   "synonyms": [
+    "which"
+   ],
+   "category": "question",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "WHERE",
+   "english": "where",
+   "synonyms": [],
+   "category": "question",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "WHO",
+   "english": "who",
+   "synonyms": [
+    "whose",
+    "whom"
+   ],
+   "category": "question",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "HOW",
+   "english": "how",
+   "synonyms": [],
+   "category": "question",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "WHY",
+   "english": "why",
+   "synonyms": [
+    "reason"
+   ],
+   "category": "question",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "TEACHER",
+   "english": "teacher",
+   "synonyms": [
+    "sir",
+    "madam",
+    "ma",
+    "lecturer",
+    "instructor"
+   ],
+   "category": "people",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "STUDENT",
+   "english": "student",
+   "synonyms": [
+    "pupil",
+    "learner"
+   ],
+   "category": "people",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "UNDERSTAND",
+   "english": "understand",
+   "synonyms": [
+    "get it",
+    "understood",
+    "clear",
+    "follow"
+   ],
+   "category": "school",
+   "tier": 2,
+   "emergency": false,
+   "speak": "I understand."
+  },
+  {
+   "label": "AGAIN",
+   "english": "again",
+   "synonyms": [
+    "repeat",
+    "once more",
+    "one more time"
+   ],
+   "category": "school",
+   "tier": 2,
+   "emergency": false,
+   "speak": "Again, please."
+  },
+  {
+   "label": "LEARN",
+   "english": "learn",
+   "synonyms": [
+    "study",
+    "studying",
+    "lesson",
+    "learning"
+   ],
+   "category": "school",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "BOOK",
+   "english": "book",
+   "synonyms": [
+    "textbook",
+    "notebook"
+   ],
+   "category": "school",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "WRITE",
+   "english": "write",
+   "synonyms": [
+    "note",
+    "notes",
+    "jot"
+   ],
+   "category": "school",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "READ",
+   "english": "read",
+   "synonyms": [
+    "reading"
+   ],
+   "category": "school",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "QUESTION",
+   "english": "question",
+   "synonyms": [
+    "ask",
+    "query"
+   ],
+   "category": "school",
+   "tier": 2,
+   "emergency": false,
+   "speak": "I have a question."
+  },
+  {
+   "label": "WANT",
+   "english": "want",
+   "synonyms": [
+    "would like",
+    "like to",
+    "wish"
+   ],
+   "category": "needs",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "NEED",
+   "english": "need",
+   "synonyms": [
+    "must",
+    "have to",
+    "require"
+   ],
+   "category": "needs",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "WATER",
+   "english": "water",
+   "synonyms": [
+    "drink"
+   ],
+   "category": "needs",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "TOILET",
+   "english": "toilet",
+   "synonyms": [
+    "bathroom",
+    "restroom",
+    "loo",
+    "washroom"
+   ],
+   "category": "needs",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "GOOD",
+   "english": "good",
+   "synonyms": [
+    "fine",
+    "great",
+    "nice"
+   ],
+   "category": "feelings",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "BAD",
+   "english": "bad",
+   "synonyms": [
+    "wrong",
+    "poor"
+   ],
+   "category": "feelings",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "NOW",
+   "english": "now",
+   "synonyms": [
+    "currently",
+    "right now"
+   ],
+   "category": "time",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "FINISH",
+   "english": "finish",
+   "synonyms": [
+    "done",
+    "finished",
+    "complete",
+    "already"
+   ],
+   "category": "time",
+   "tier": 2,
+   "emergency": false
+  },
+  {
+   "label": "SCHOOL",
+   "english": "school",
+   "synonyms": [
+    "classroom"
+   ],
+   "category": "school",
+   "tier": 3,
+   "emergency": false
+  },
+  {
+   "label": "SLOW",
+   "english": "slow",
+   "synonyms": [
+    "slowly",
+    "slower"
+   ],
+   "category": "school",
+   "tier": 3,
+   "emergency": false
+  },
+  {
+   "label": "KNOW",
+   "english": "know",
+   "synonyms": [
+    "knew",
+    "aware"
+   ],
+   "category": "school",
+   "tier": 3,
+   "emergency": false
+  },
+  {
+   "label": "EAT",
+   "english": "eat",
+   "synonyms": [
+    "food",
+    "lunch",
+    "breakfast",
+    "dinner",
+    "hungry"
+   ],
+   "category": "needs",
+   "tier": 3,
+   "emergency": false
+  },
+  {
+   "label": "GO",
+   "english": "go",
+   "synonyms": [
+    "leave",
+    "going",
+    "went"
+   ],
+   "category": "needs",
+   "tier": 3,
+   "emergency": false
+  },
+  {
+   "label": "COME",
+   "english": "come",
+   "synonyms": [
+    "coming",
+    "came"
+   ],
+   "category": "needs",
+   "tier": 3,
+   "emergency": false
+  },
+  {
+   "label": "WAIT",
+   "english": "wait",
+   "synonyms": [
+    "hold on",
+    "moment",
+    "minute"
+   ],
+   "category": "needs",
+   "tier": 3,
+   "emergency": false
+  },
+  {
+   "label": "HOME",
+   "english": "home",
+   "synonyms": [
+    "house"
+   ],
+   "category": "places",
+   "tier": 3,
+   "emergency": false
+  },
+  {
+   "label": "SICK",
+   "english": "sick",
+   "synonyms": [
+    "ill",
+    "unwell",
+    "fever"
+   ],
+   "category": "feelings",
+   "tier": 3,
+   "emergency": false
+  },
+  {
+   "label": "TIRED",
+   "english": "tired",
+   "synonyms": [
+    "sleepy",
+    "exhausted"
+   ],
+   "category": "feelings",
+   "tier": 3,
+   "emergency": false
+  },
+  {
+   "label": "HAPPY",
+   "english": "happy",
+   "synonyms": [
+    "glad",
+    "pleased"
+   ],
+   "category": "feelings",
+   "tier": 3,
+   "emergency": false
+  },
+  {
+   "label": "TODAY",
+   "english": "today",
+   "synonyms": [],
+   "category": "time",
+   "tier": 3,
+   "emergency": false
+  },
+  {
+   "label": "TOMORROW",
+   "english": "tomorrow",
+   "synonyms": [],
+   "category": "time",
+   "tier": 3,
+   "emergency": false
+  },
+  {
+   "label": "YESTERDAY",
+   "english": "yesterday",
+   "synonyms": [],
+   "category": "time",
+   "tier": 3,
+   "emergency": false
+  }
+ ]
+}

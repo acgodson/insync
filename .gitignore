@@ -1,0 +1,35 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Secrets (keys only ever go in environment variables, but just in case)
+.env
+.env.*
+
+# Language module: generated or machine-specific
+backend/language/.tts_cache/
+backend/language/vocab.local.json
+*.jsonl
+
+# Signer recordings and consent records: personal data, never in git
+data/
+
+# Downloads and archives
+*.zip
+
+# Teammates' build output
+node_modules/
+dist/
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# OS and editor clutter
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

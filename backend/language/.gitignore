@@ -1,0 +1,3 @@
+.tts_cache/
+vocab.local.json
+__pycache__/

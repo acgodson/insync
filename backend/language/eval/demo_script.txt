@@ -1,0 +1,27 @@
+# The hackathon demo conversation, scripted. Classroom: Bob is the teacher, Alice the Deaf student.
+# Milestone 3: "hello" both directions
+say Hello Alice!
+sign HELLO
+wait 2
+# Bob asks; Alice answers with an ambiguous middle sign
+say What is your name?
+sign I:.93
+sign NAME:.71 WATER:.62
+end
+# Reply direction with synonyms and a name
+say Good. Please open your textbook. Chidi will help you.
+# Alice doesn't understand; recogniser unsure between UNDERSTAND and KNOW
+sign I:.9
+sign NO:.88
+sign UNDERSTAND:.66 KNOW:.61
+end
+say Okay, I will repeat it slowly.
+# Emergency: spoken immediately, no pause wait
+sign FIRE:.91
+# Teach it live: an unknown sign, taught, then usable in both directions
+sign SCIENCE:.31
+teach SCIENCE science
+say Today we learn science.
+sign SCIENCE:.89
+sign GOOD:.85
+end
