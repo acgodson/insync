@@ -1,6 +1,7 @@
 """InSync service: room server at /ws, rooms and join page over HTTP, teach upload and library."""
 import asyncio
 import json
+import logging
 import uuid
 
 from pathlib import Path
@@ -13,6 +14,10 @@ import config
 import pipeline
 import rooms
 from toolkit import segment
+
+logging.basicConfig(level=logging.INFO, format="%(name)s %(message)s")   # language module: Claude / voice status
+for noisy in ("httpx", "httpcore", "huggingface_hub"):
+    logging.getLogger(noisy).setLevel(logging.WARNING)
 
 app = FastAPI(title="InSync service")
 NO_CACHE = {"Cache-Control": "no-cache, must-revalidate"}   # browsers must re-check the HTML after each deploy
