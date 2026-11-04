@@ -84,12 +84,24 @@ class MainActivity : FlutterFragmentActivity() {
         else status("Camera permission denied in Meta AI")
       }
 
+  private val calibration = CalibrationBridge(this)
+  private val recorder = Recorder(this)
+
   override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
     super.configureFlutterEngine(flutterEngine)
+    calibration.register(flutterEngine)
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, METHOD_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
         "start" -> { start(); result.success(null) }
         "stop" -> { stop(); result.success(null) }
+        "record" -> {
+          if (camera == null) { result.error("not_streaming", "Start the stream first", null); return@setMethodCallHandler }
+          val path = recorder.start(call.argument<String>("label")) { dir, n ->
+            runOnUiThread { eventSink?.success(mapOf("recording" to "done", "path" to dir, "frames" to n)) }
+          }
+          result.success(path)
+        }
+        "export" -> scope.launch(Dispatchers.IO) { val z = recorder.export(); runOnUiThread { result.success(z) } }
         "frameDrawn" -> { onFrameDrawn(call.argument<Int>("n")!!, call.argument<Long>("received")!!, call.argument<Long>("drawn")!!); result.success(null) }
         else -> result.notImplemented()
       }
@@ -242,6 +254,7 @@ class MainActivity : FlutterFragmentActivity() {
     val out = ByteArrayOutputStream()
     YuvImage(nv21, ImageFormat.NV21, w, h, null).compressToJpeg(Rect(0, 0, w, h), 70, out)
     val jpeg = out.toByteArray()
+    recorder.onFrame(jpeg)
     val convertMs = (SystemClock.elapsedRealtimeNanos() - t0) / 1_000_000
     val n = ++frameCount
     if (n == 1) Log.i(TAG, "First frame ${w}x$h (${if (h > w) "portrait" else "landscape"}), ${buf.capacity()} bytes, quality=$QUALITY")
@@ -261,6 +274,7 @@ class MainActivity : FlutterFragmentActivity() {
   }
 
   private fun stop() {
+    recorder.finish()
     frameCount = 0
     pending.clear()
     camera?.stop()

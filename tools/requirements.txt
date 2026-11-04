@@ -1,0 +1,12 @@
+# Pinned versions verified on macOS 14 (Darwin 23, Apple Silicon), Python 3.13.
+# Note: mediapipe also pulls in opencv-contrib-python at the same version; both
+# provide the cv2 module and are kept on the same version so they don't clash.
+mediapipe==1.2.0
+opencv-python==5.0.0.93
+numpy==2.5.4
+
+# Kaggle benchmark (import_kaggle.py). kaggle 2.2.5 imports `six` without declaring it.
+kaggle==2.2.5
+six==1.17.0
+pandas==3.1.0
+pyarrow==26.0.1
