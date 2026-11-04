@@ -48,3 +48,6 @@ docs/
 /android/local.properties
 *.apk
 *.tmp
+
+# Web UI copied from web/dist at build time
+/assets/web/

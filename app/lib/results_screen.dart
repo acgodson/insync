@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'calibration_screen.dart';
 import 'calibration_service.dart';
 import 'face_mesh_painter.dart';
-import 'main.dart';
+import 'stream_screen.dart';
 
 // Calibration result: mesh on a still, stability verdict, remember + save / redo
 class ResultsScreen extends StatefulWidget {

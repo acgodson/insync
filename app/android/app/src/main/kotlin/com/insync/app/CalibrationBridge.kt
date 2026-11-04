@@ -1,4 +1,4 @@
-package com.almero.app
+package com.insync.app
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -27,11 +27,11 @@ import java.util.concurrent.Executors
 
 // Calibration bridge: front camera -> MediaPipe Face Landmarker -> Flutter
 //
-// MethodChannel "almero/calibration":
+// MethodChannel "insync/calibration":
 //   start            opens the front camera (asks for CAMERA permission first)
 //   stop             closes the camera and releases the landmarker
 //   edges            returns the face tessellation as a flat [a0,b0,a1,b1,...] Int list
-// EventChannel "almero/calibration_frames", one Map per analysed frame:
+// EventChannel "insync/calibration_frames", one Map per analysed frame:
 //   jpeg (bytes, upright, not mirrored), w, h, ts (ms),
 //   brightness (0-255 mean luma),
 //   landmarks (478*3 floats, normalised x,y,z) or absent when no face,
@@ -39,9 +39,9 @@ import java.util.concurrent.Executors
 // Frames are never written to disk.
 class CalibrationBridge(private val activity: FlutterFragmentActivity) {
   companion object {
-    private const val TAG = "AlmeroCalib"
-    private const val METHOD_CHANNEL = "almero/calibration"
-    private const val EVENT_CHANNEL = "almero/calibration_frames"
+    private const val TAG = "InSyncCalib"
+    private const val METHOD_CHANNEL = "insync/calibration"
+    private const val EVENT_CHANNEL = "insync/calibration_frames"
     private const val JPEG_QUALITY = 60
   }
 

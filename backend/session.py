@@ -50,6 +50,10 @@ class Session:
 
     async def handle(self, m):
         t = m.get("type")
+        self.seen_types = getattr(self, "seen_types", set())
+        if t not in self.seen_types:
+            self.seen_types.add(t)
+            print(f"first message of type {t!r}: {str({k: (v[:40] + '...' if isinstance(v, str) and len(v) > 40 else v) for k, v in m.items()})}")
         if t == "ui_ready":
             await self.emit("status", latency_ms=0, fps=0)
         elif t == "session":
@@ -108,6 +112,9 @@ class Session:
         hands = await asyncio.to_thread(pipeline.detect_hands, self.landmarker, image, ts)
         await self.emit("landmarks", hands=[hd for hd in pipeline.head_relative(hands, w, h) if hd["visible"]])
         self.frames_in += 1
+        self.frames_total = getattr(self, "frames_total", 0) + 1
+        if self.frames_total == 1 or self.frames_total % 100 == 0:
+            print(f"frames received: {self.frames_total} ({w}x{h}), hands visible: {sum(h_['visible'] for h_ in hands.values())}")
         self.latencies.append((time.monotonic() - received) * 1000)
         done = self.segmenter.push(ts, hands)
         if done:

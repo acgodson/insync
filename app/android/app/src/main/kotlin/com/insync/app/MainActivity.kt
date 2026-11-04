@@ -1,4 +1,4 @@
-package com.almero.app
+package com.insync.app
 
 import android.Manifest
 import android.content.Intent
@@ -25,6 +25,10 @@ import com.meta.wearable.dat.core.types.DeviceSessionError
 import com.meta.wearable.dat.core.types.Permission
 import com.meta.wearable.dat.core.types.PermissionStatus
 import com.meta.wearable.dat.core.types.RegistrationState
+import com.meta.wearable.dat.mockdevice.MockDeviceKit
+import com.meta.wearable.dat.mockdevice.api.GlassesModel
+import com.meta.wearable.dat.mockdevice.api.MockDeviceKitConfig
+import com.meta.wearable.dat.mockdevice.api.camera.CameraFacing
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -45,10 +49,10 @@ import kotlinx.coroutines.launch
 // Native bridge: Meta Wearables session + camera stream -> JPEG frames over an EventChannel
 class MainActivity : FlutterFragmentActivity() {
   companion object {
-    private const val TAG = "Almero"
-    private const val FRAME_TAG = "AlmeroFrame"
-    private const val METHOD_CHANNEL = "almero/control"
-    private const val EVENT_CHANNEL = "almero/frames"
+    private const val TAG = "InSync"
+    private const val FRAME_TAG = "InSyncFrame"
+    private const val METHOD_CHANNEL = "insync/control"
+    private const val EVENT_CHANNEL = "insync/frames"
     private const val FRAME_RATE = 24
     private val QUALITY = VideoQuality.MEDIUM
     // Latency debug (off by default)
@@ -66,6 +70,8 @@ class MainActivity : FlutterFragmentActivity() {
   private val sessionJobs = mutableListOf<Job>()
   private val streamJobs = mutableListOf<Job>()
   private var initialized = false
+  private var fallback = false       // true: use the Mock Device Kit (phone camera) when no glasses are found
+  private var mockActive = false
   private var deviceJob: Job? = null
 
   // Latency bookkeeping
@@ -92,7 +98,7 @@ class MainActivity : FlutterFragmentActivity() {
     calibration.register(flutterEngine)
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, METHOD_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
-        "start" -> { start(); result.success(null) }
+        "start" -> { fallback = call.argument<Boolean>("fallback") ?: false; start(); result.success(null) }
         "stop" -> { stop(); result.success(null) }
         "record" -> {
           if (camera == null) { result.error("not_streaming", "Start the stream first", null); return@setMethodCallHandler }
@@ -131,7 +137,8 @@ class MainActivity : FlutterFragmentActivity() {
   }
 
   private fun start() {
-    val missing = ANDROID_PERMISSIONS.filter { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
+    val needed = if (fallback) ANDROID_PERMISSIONS + Manifest.permission.CAMERA else ANDROID_PERMISSIONS
+    val missing = needed.filter { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
     if (missing.isNotEmpty()) androidPermissionLauncher.launch(missing.toTypedArray()) else connectAndStream()
   }
 
@@ -142,6 +149,8 @@ class MainActivity : FlutterFragmentActivity() {
       monitorDevice()
     }
     scope.launch {
+      if (mockActive) { startSession(); return@launch }
+      if (fallback && Wearables.registrationState.value != RegistrationState.REGISTERED) { startMock(); return@launch }
       if (Wearables.registrationState.value != RegistrationState.REGISTERED) {
         status("Registering with Meta AI: approve in the Meta AI app")
         Wearables.startRegistration(this@MainActivity)
@@ -179,13 +188,31 @@ class MainActivity : FlutterFragmentActivity() {
   // Session
   private suspend fun startSession() {
     if (session != null) { status("Already running"); return }
-    repeat(20) { attempt ->
+    val attempts = if (fallback && !mockActive) 3 else 20
+    repeat(attempts) { attempt ->
       val result = Wearables.createSession(AutoDeviceSelector())
-      if (result.fold(onSuccess = { true }, onFailure = { _, _ -> false })) { openSession(result); return }
+      if (result.fold(onSuccess = { true }, onFailure = { _, _ -> false })) {
+        status(if (mockActive) "Source: mock (phone camera)" else "Source: glasses")
+        openSession(result); return
+      }
       if (attempt == 0) status("Waiting for glasses (wear them, keep Meta AI connected)")
       delay(1000)
     }
-    status("No eligible device found after 20s")
+    if (fallback && !mockActive) startMock() else status("No eligible device found after ${attempts}s")
+  }
+
+  // Mock Device Kit: simulated glasses fed by the phone's front camera (no real glasses needed)
+  private suspend fun startMock() {
+    status("No glasses: using phone camera")
+    val kit = MockDeviceKit.getInstance(this)
+    if (!kit.isEnabled) kit.enable(MockDeviceKitConfig(initiallyRegistered = true, initialPermissionsGranted = true))
+    val glasses = kit.pairGlasses(GlassesModel.RAYBAN_META).getOrNull()
+    if (glasses == null) { status("Mock device failed"); return }
+    glasses.powerOn(); glasses.unfold(); glasses.don()
+    glasses.services.camera.setCameraFeed(CameraFacing.FRONT)
+    mockActive = true
+    monitorDevice()
+    startSession()
   }
 
   private fun openSession(result: DatResult<DeviceSession, DeviceSessionError>) {

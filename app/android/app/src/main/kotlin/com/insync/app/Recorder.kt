@@ -1,4 +1,4 @@
-package com.almero.app
+package com.insync.app
 
 import android.content.Context
 import android.os.Handler
@@ -16,7 +16,7 @@ import java.util.zip.ZipOutputStream
 // Record mode: writes streamed JPEG frames to <external files>/recordings/<label_>yyyyMMdd_HHmmss/
 class Recorder(private val context: Context) {
   companion object {
-    private const val TAG = "AlmeroRecord"
+    private const val TAG = "InSyncRecord"
     const val DURATION_MS = 10_000L
   }
 

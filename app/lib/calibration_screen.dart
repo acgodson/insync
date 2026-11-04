@@ -26,8 +26,8 @@ class _Capture {
 }
 
 class _CalibrationScreenState extends State<CalibrationScreen> {
-  static const _control = MethodChannel('almero/calibration');
-  static const _frames = EventChannel('almero/calibration_frames');
+  static const _control = MethodChannel('insync/calibration');
+  static const _frames = EventChannel('insync/calibration_frames');
 
   // Capture tuning
   static const _holdMs = 1000;
