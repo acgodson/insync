@@ -121,6 +121,8 @@ class Room:
     # --- Participant messages ---
 
     async def handle_participant(self, ws, m):
+        who = next((p["name"] for p in self.participants if p["ws"] is ws), "Guest")
+        print(f"room {self.code}: participant {who} sent {m.get('type')!r} {str(m.get('text', ''))[:60]!r}")
         if m.get("type") != "speech_text":
             return
         text = (m.get("text") or "").strip()
