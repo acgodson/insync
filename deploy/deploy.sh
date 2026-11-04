@@ -1,5 +1,6 @@
 #!/bin/bash
 # Deploy InSync (backend + tools + web) to the EC2 host: rsync, venv, models, systemd, Caddy. One command.
+# The taught sign library (tools/data/signs), the live vocabulary and .env on the host are never touched.
 set -e
 HOST="${INSYNC_HOST:-13.216.97.225}"
 KEY="${INSYNC_KEY:-$HOME/.ssh/insync-regina.pem}"
@@ -10,6 +11,7 @@ SSH="ssh -i $KEY -o StrictHostKeyChecking=no ubuntu@$HOST"
 echo "== rsync to $HOST"
 rsync -az --delete -e "ssh -i $KEY -o StrictHostKeyChecking=no" \
   --exclude '.venv' --exclude '__pycache__' --exclude 'uploads' --exclude 'data/kaggle' --exclude 'index.original.html' \
+  --exclude 'data/signs/*/*.json' --exclude 'vocab.local.json' --exclude '.tts_cache' --exclude '.env' \
   "$ROOT/backend" "$ROOT/tools" "$ROOT/web" "$ROOT/deploy" ubuntu@"$HOST":/opt/insync/
 
 echo "== remote setup"
