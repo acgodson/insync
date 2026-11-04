@@ -1,17 +1,21 @@
-"""InSync service: WebSocket contract at /ws, teach upload and library over HTTP."""
+"""InSync service: room server at /ws, rooms and join page over HTTP, teach upload and library."""
 import asyncio
 import json
 import uuid
 
-from fastapi import FastAPI, File, Form, UploadFile, WebSocket, WebSocketDisconnect
-from fastapi.responses import JSONResponse
+from pathlib import Path
+
+from fastapi import FastAPI, File, Form, Request, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
 
 import config
 import pipeline
-from session import Session
+import rooms
 from toolkit import segment
 
 app = FastAPI(title="InSync service")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])  # uploads from the app's WebView
 
 
 @app.get("/health")
@@ -45,21 +49,67 @@ async def teach_upload(label: str = Form(...), file: UploadFile = File(...), lan
     return {"ok": True, "label": label, "takes": total, "frames": n_frames, "view": "front"}
 
 
+# --- Rooms ---
+
+@app.post("/rooms")
+def create_room(request: Request):
+    room = rooms.create()
+    host = request.headers.get("host", "localhost:8000")
+    return {"code": room.code, "link": f"{request.url.scheme}://{host}/join/{room.code}"}
+
+
+@app.get("/rooms/{code}")
+def get_room(code: str):
+    room = rooms.rooms.get(code.upper())
+    if not room:
+        return JSONResponse({"error": "no such room"}, status_code=404)
+    return {"code": room.code, "participants": room.people()}
+
+
+@app.get("/app")
+def signer_page():
+    """Signer web UI (web/dist/index.html) for the phone's prod mode or a laptop browser (?service=...)."""
+    return FileResponse(Path(__file__).parent.parent / "web" / "dist" / "index.html")
+
+
+@app.get("/join/{code}")
+def join_page(code: str):
+    return FileResponse(Path(__file__).parent / "static" / "join.html")
+
+
+# --- WebSocket: /ws?room=<code>&role=signer|participant&name=<name> ---
+
 @app.websocket("/ws")
-async def ws(socket: WebSocket):
+async def ws(socket: WebSocket, room: str = "", role: str = "signer", name: str = ""):
     await socket.accept()
-    session = Session(lambda m: socket.send_text(json.dumps(m)))
+    code = room.upper()
+    signer = role != "participant"
+    r = rooms.rooms.get(code)
+    if r is None:
+        if not signer:
+            await socket.close(code=4404, reason="no such room")
+            return
+        r = rooms.create(code or None)   # unknown code or no code: create it (private room without a code)
+    if signer:
+        await r.join_signer(socket, name or "Signer")
+    else:
+        await r.join_participant(socket, name or "Guest")
     try:
         while True:
             try:
                 m = json.loads(await socket.receive_text())
             except json.JSONDecodeError:
                 continue
+            if not isinstance(m, dict):
+                continue
             try:
-                await session.handle(m)
+                if not signer:
+                    await r.handle_participant(socket, m)
+                elif r.signer is socket and r.session:
+                    await r.session.handle(m)
             except Exception as e:  # keep the connection alive on any handler error
                 print("message error:", m.get("type"), repr(e))
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, RuntimeError):
         pass
     finally:
-        session.close()
+        await r.leave(socket)

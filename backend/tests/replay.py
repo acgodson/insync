@@ -2,6 +2,8 @@
 
   python tests/replay.py <frames_folder>                       stream one folder, print messages
   python tests/replay.py --teach wave <take1> <take2> <query>  teach from two folders, then recognise
+  python tests/replay.py --room ABCD <frames_folder>           same, as the signer of room ABCD
+  python tests/replay.py --participant Bob --room ABCD         join ABCD as a participant, say --speech
 """
 import argparse
 import asyncio
@@ -9,6 +11,7 @@ import base64
 import json
 import re
 import time
+from urllib.parse import quote
 from pathlib import Path
 
 import websockets
@@ -28,13 +31,17 @@ async def send(ws, **m):
 
 
 async def printer(ws, seen):
-    async for raw in ws:
-        m = json.loads(raw)
-        seen.append(m)
-        if m["type"] == "landmarks":
-            print(f"landmarks hands={len(m['hands'])}")
-        else:
-            print(json.dumps(m))
+    try:
+        async for raw in ws:
+            m = json.loads(raw)
+            seen.append(m)
+            if m["type"] == "landmarks":
+                print(f"landmarks hands={len(m['hands'])}")
+            else:
+                print(json.dumps(m))
+    except websockets.ConnectionClosed:
+        pass
+    print(f"--- closed {ws.close_code} {ws.close_reason or ''}".rstrip())
 
 
 async def stream(ws, folder, w=504, h=896):
@@ -61,14 +68,24 @@ async def wait_for(seen, type_, since=0, timeout=5):
 
 async def main():
     p = argparse.ArgumentParser()
-    p.add_argument("folders", nargs="+")
+    p.add_argument("folders", nargs="*")
     p.add_argument("--url", default="ws://localhost:8000/ws")
     p.add_argument("--teach", metavar="LABEL", help="teach LABEL from the first two folders, query with the third")
     p.add_argument("--language", default="nsl")
     p.add_argument("--speech", default="hello can you help me")
+    p.add_argument("--room", metavar="CODE", help="join this room (signer creates it if unknown)")
+    p.add_argument("--participant", metavar="NAME", help="join --room as a participant instead of streaming frames")
+    p.add_argument("--seconds", type=float, default=5, help="participant mode: how long to listen")
     a = p.parse_args()
 
-    async with websockets.connect(a.url, max_size=None) as ws:
+    if a.participant:
+        if not a.room:
+            raise SystemExit("--participant needs --room")
+        return await participant(a)
+    if not a.folders:
+        raise SystemExit("give at least one frames folder")
+    url = f"{a.url}?room={a.room}&role=signer" if a.room else a.url
+    async with websockets.connect(url, max_size=None) as ws:
         seen = []
         task = asyncio.create_task(printer(ws, seen))
         await send(ws, type="ui_ready", view="phone")
@@ -98,6 +115,19 @@ async def main():
         m = await wait_for(seen, "avatar_play", since)
         print("RESULT:", json.dumps(m) if m else "no avatar_play")
         await asyncio.sleep(2.5)
+        task.cancel()
+
+
+async def participant(a):
+    url = f"{a.url}?room={a.room}&role=participant&name={quote(a.participant)}"
+    async with websockets.connect(url, max_size=None) as ws:
+        seen = []
+        task = asyncio.create_task(printer(ws, seen))
+        await asyncio.sleep(0.5)
+        if ws.close_code is not None:
+            return
+        await send(ws, type="speech_text", text=a.speech)
+        await asyncio.sleep(a.seconds)
         task.cancel()
 
 

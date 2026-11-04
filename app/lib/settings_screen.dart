@@ -46,7 +46,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           TextField(controller: _dev, decoration: const InputDecoration(labelText: 'dev URL (Vite)')),
           TextField(controller: _prod, decoration: const InputDecoration(labelText: 'prod URL')),
-          TextField(controller: _host, decoration: const InputDecoration(labelText: 'service host (ip:port)')),
+          TextField(controller: _host, decoration: const InputDecoration(labelText: 'service URL (https://host or http://ip:port)')),
           SwitchListTile(
             title: const Text('Debug strip'),
             value: s.debugStrip,

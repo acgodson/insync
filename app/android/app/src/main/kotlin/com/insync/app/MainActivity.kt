@@ -99,6 +99,7 @@ class MainActivity : FlutterFragmentActivity() {
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, METHOD_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
         "start" -> { fallback = call.argument<Boolean>("fallback") ?: false; start(); result.success(null) }
+        "source" -> { switchSource(call.argument<String>("to") == "glasses"); result.success(null) }
         "stop" -> { stop(); result.success(null) }
         "record" -> {
           if (camera == null) { result.error("not_streaming", "Start the stream first", null); return@setMethodCallHandler }
@@ -150,6 +151,8 @@ class MainActivity : FlutterFragmentActivity() {
     }
     scope.launch {
       if (mockActive) { startSession(); return@launch }
+      if (fallback && preferredSource == "phone") { startMock(); return@launch }
+      if (fallback && preferredSource == "glasses") fallback = false   // wait for the real glasses (20 s)
       if (fallback && Wearables.registrationState.value != RegistrationState.REGISTERED) { startMock(); return@launch }
       if (Wearables.registrationState.value != RegistrationState.REGISTERED) {
         status("Registering with Meta AI: approve in the Meta AI app")
@@ -188,7 +191,8 @@ class MainActivity : FlutterFragmentActivity() {
   // Session
   private suspend fun startSession() {
     if (session != null) { status("Already running"); return }
-    val attempts = if (fallback && !mockActive) 3 else 20
+    // Registered glasses get 8 s to show up (they must be worn); unregistered phones fall back after 3 s
+    val attempts = if (!fallback || mockActive) 20 else if (Wearables.registrationState.value == RegistrationState.REGISTERED) 8 else 3
     repeat(attempts) { attempt ->
       val result = Wearables.createSession(AutoDeviceSelector())
       if (result.fold(onSuccess = { true }, onFailure = { _, _ -> false })) {
@@ -200,6 +204,19 @@ class MainActivity : FlutterFragmentActivity() {
     }
     if (fallback && !mockActive) startMock() else status("No eligible device found after ${attempts}s")
   }
+
+  // Manual source switch (tap the status line in the app): glasses <-> phone camera.
+  // The Mock Device Kit cannot be cleanly undone inside a running process, so the choice is
+  // saved and the app restarts itself; start() reads it on the next launch.
+  private fun switchSource(glasses: Boolean) {
+    getSharedPreferences("insync", MODE_PRIVATE).edit().putString("source", if (glasses) "glasses" else "phone").apply()
+    stop()
+    val restart = Intent.makeRestartActivityTask(componentName)
+    startActivity(restart)
+    android.os.Handler(mainLooper).postDelayed({ Runtime.getRuntime().exit(0) }, 150)
+  }
+
+  private val preferredSource get() = getSharedPreferences("insync", MODE_PRIVATE).getString("source", "auto")
 
   // Mock Device Kit: simulated glasses fed by the phone's front camera (no real glasses needed)
   private suspend fun startMock() {

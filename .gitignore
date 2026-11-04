@@ -9,3 +9,4 @@
 /backend/.venv/
 __pycache__/
 *.pyc
+/web/dist/index.original.html

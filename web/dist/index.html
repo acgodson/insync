@@ -1,7 +1,7 @@
 <!-- test copy -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Almero</title>
+<title>InSync</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -699,12 +699,13 @@ details.qs code { font-family: var(--f-mono); font-size: 12px; color: var(--bob)
 <div class="shell" id="shell">
   <div class="app" id="app">
     <div class="bar" id="topbar">
-      <div class="brand"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a5 5 0 0 1 5-5h2M20 12a5 5 0 0 1-5 5h-2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M9 4.5 11.5 7 9 9.5M15 14.5 12.5 17l2.5 2.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Almero</span></div>
+      <div class="brand"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a5 5 0 0 1 5-5h2M20 12a5 5 0 0 1-5 5h-2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M9 4.5 11.5 7 9 9.5M15 14.5 12.5 17l2.5 2.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>InSync</span></div>
       <div class="tabs" role="tablist" aria-label="Sections">
         <button role="tab" id="tabTalk" aria-selected="true" aria-controls="vTalk" type="button">Talk</button>
         <button role="tab" id="tabSigns" aria-selected="false" aria-controls="vSigns" type="button">My signs<span class="n" id="signCount"></span></button>
       </div>
       <div class="sp"></div>
+      <span id="roomInfo" hidden style="font-family:var(--f-mono);font-size:11px;color:var(--muted);white-space:nowrap;margin-right:4px"></span>
       <span class="status" id="statusPill" role="status"><span class="sdot"></span><span id="statusLbl">Live</span><span class="mono" id="liveTime">00:00</span></span>
       <button class="me" id="persBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Your settings"><span>A</span></button>
       <span id="conn" hidden></span><button id="helpBtn" type="button" hidden></button>
@@ -713,7 +714,7 @@ details.qs code { font-family: var(--f-mono); font-size: 12px; color: var(--bob)
       <div class="mhead"><b>Alice</b><span>Nigerian Sign Language</span></div>
       <button role="menuitem" type="button" id="mPers"><svg class="i"><use href="#user"/></svg>Voice and interpreter</button>
       <button role="menuitem" type="button" id="mTour"><svg class="i"><use href="#refresh"/></svg>Show me around</button>
-      <button role="menuitem" type="button" id="mIntro"><svg class="i"><use href="#book"/></svg>How Almero works</button>
+      <button role="menuitem" type="button" id="mIntro"><svg class="i"><use href="#book"/></svg>How InSync works</button>
       <button role="menuitem" type="button" id="mScan"><svg class="i"><use href="#refresh"/></svg>Redo face setup</button>
       <hr>
       <button role="menuitem" type="button" id="mDemo"><svg class="i"><use href="#sliders"/></svg>Demo controls<span class="sp"></span><span class="kbd">D</span></button>
@@ -753,7 +754,7 @@ details.qs code { font-family: var(--f-mono); font-size: 12px; color: var(--bob)
         <div class="signs">
           <div class="avslot" id="slotSigns"></div>
           <div class="card lib">
-            <div class="libhd"><div><h2>My signs</h2><p>Almero understands these and can sign them back</p></div><button class="addbtn big" id="addSign2" type="button"><svg class="i"><use href="#plus"/></svg><span>Add a sign</span></button></div>
+            <div class="libhd"><div><h2>My signs</h2><p>InSync understands these and can sign them back</p></div><button class="addbtn big" id="addSign2" type="button"><svg class="i"><use href="#plus"/></svg><span>Add a sign</span></button></div>
             <div class="chipsrow" id="sigFilters"><button type="button" data-f="all" aria-pressed="true">All</button><button type="button" data-f="yours" aria-pressed="false">Yours</button><button type="button" data-f="built" aria-pressed="false">Built in</button></div>
             <ul class="siglist" id="sigList"></ul>
           </div>
@@ -771,8 +772,8 @@ details.qs code { font-family: var(--f-mono); font-size: 12px; color: var(--bob)
       <div class="gloss" id="chips" aria-label="Signs being made"></div>
     </div>
     <div class="tour" id="tour" hidden><div class="ring" id="tourRing"></div><div class="tip" id="tourTip" role="dialog" aria-live="polite"></div></div>
-    <div class="onb" id="onb" hidden role="dialog" aria-modal="true" aria-label="Welcome to Almero" tabindex="-1">
-      <div class="onb-top"><div class="brand"><svg class="mark" viewBox="0 0 22 22" aria-hidden="true"><circle cx="8" cy="11" r="5.5" fill="var(--bob)"/><circle cx="14" cy="11" r="5.5" fill="var(--alice)" fill-opacity=".92"/></svg><span>Almero</span></div><button class="onb-skip" id="onbSkip" type="button">Skip</button></div>
+    <div class="onb" id="onb" hidden role="dialog" aria-modal="true" aria-label="Welcome to InSync" tabindex="-1">
+      <div class="onb-top"><div class="brand"><svg class="mark" viewBox="0 0 22 22" aria-hidden="true"><circle cx="8" cy="11" r="5.5" fill="var(--bob)"/><circle cx="14" cy="11" r="5.5" fill="var(--alice)" fill-opacity=".92"/></svg><span>InSync</span></div><button class="onb-skip" id="onbSkip" type="button">Skip</button></div>
       <div class="onb-body"><div class="onb-in" id="onbIn"></div></div>
       <div class="onb-foot" id="onbFoot"></div>
     </div>
@@ -792,12 +793,12 @@ details.qs code { font-family: var(--f-mono); font-size: 12px; color: var(--bob)
         <label><input type="radio" name="speed" value="2"><span>2×</span></label>
       </div>
     </div>
-    <div class="hint" id="demoHint">A teacher talks to Alice, she replies, then teaches Almero a new sign</div>
+    <div class="hint" id="demoHint">A teacher talks to Alice, she replies, then teaches InSync a new sign</div>
   </div>
   <div class="sbox">
     <h3>Alice signs <small>glasses camera</small></h3>
     <div class="row" id="signBtns"></div>
-    <div class="hint">The dashed button is a sign Almero doesn't know yet</div>
+    <div class="hint">The dashed button is a sign InSync doesn't know yet</div>
   </div>
   <div class="sbox">
     <h3>Screen</h3>
@@ -5612,6 +5613,13 @@ return exports;})();
   };
 
   // ======================================================== app
+  // ---------- InSync app bridge (Flutter WebView). window.insync is injected on page start and
+  // again on page finish, followed by an 'insync-ready' event. Callbacks the page defines on it
+  // (onMessage, speechResult, voices) live in bridgeHandlers and are re-attached on every inject.
+  function insyncBridge() { var b = window.insync; return b && b.native === true ? b : null; }
+  var bridgeHandlers = {};
+  function attachBridge() { var b = insyncBridge(); if (!b) return null; for (var k in bridgeHandlers) b[k] = bridgeHandlers[k]; return b; }
+  window.addEventListener("insync-ready", function () { attachBridge(); });
   var NAMES = { bob: "Teacher", alice: "Alice" };
   var readAloud = false, canSpeak = "speechSynthesis" in window;
   var tab = "talk";
@@ -5657,7 +5665,7 @@ return exports;})();
 
   function explain(who, text) {
     var log = $("log"), li = el("li");
-    li.appendChild(el("span", "w " + who, who === "bob" ? "Teacher" : who === "alice" ? "Alice" : "Almero"));
+    li.appendChild(el("span", "w " + who, who === "bob" ? "Teacher" : who === "alice" ? "Alice" : "InSync"));
     li.appendChild(el("span", null, text)); log.insertBefore(li, log.firstChild);
     while (log.children.length > 5) log.removeChild(log.lastChild);
   }
@@ -5685,9 +5693,9 @@ return exports;})();
   ];
   var ACCENTS = { "en-GB": "British", "en-US": "American", "en-NG": "Nigerian", "en-AU": "Australian", "en-IN": "Indian", "en-ZA": "South African", "en-IE": "Irish", "en-CA": "Canadian", "en-NZ": "New Zealand", "en-KE": "Kenyan", "en-GH": "Ghanaian", "en-TZ": "Tanzanian", "en-SG": "Singaporean", "en-PH": "Filipino", "en-HK": "Hong Kong", "en-SCOTLAND": "Scottish" };
   var prefs = { voice: store.get("almero.voice") || "", rate: +(store.get("almero.rate") || 1), tone: store.get("almero.tone") || "t5" };
-  var voices = [];
+  var voices = [], nativeVoices = false;
   function loadVoices() {
-    if (!canSpeak) return;
+    if (!canSpeak || nativeVoices) return;
     try { voices = speechSynthesis.getVoices().filter(function (v) { return /^en/i.test(v.lang); }); } catch (e) { voices = []; }
     voices.sort(function (a, b) { return accentOf(a).localeCompare(accentOf(b)) || a.name.localeCompare(b.name); });
     if (!$("persScrim").hidden) renderPers();
@@ -5697,7 +5705,19 @@ return exports;})();
   function cleanName(v) { return v.name.replace(/^(Microsoft|Google|Apple)\s+/i, "").replace(/\s*Online \(Natural\)/i, "").replace(/\s*-\s*English.*$/i, "").replace(/\s*\(.*\)$/, ""); }
   function chosenVoice() { return voices.filter(function (v) { return v.voiceURI === prefs.voice; })[0] || null; }
   if (canSpeak) { loadVoices(); try { speechSynthesis.addEventListener("voiceschanged", loadVoices); } catch (e) {} }
+  bridgeHandlers.voices = function (list) {
+    try { if (typeof list === "string") list = JSON.parse(list); } catch (e) { return; }
+    if (!Array.isArray(list)) return;
+    nativeVoices = true; canSpeak = true;
+    voices = list.map(function (x) { var l = String((x && x.locale) || "").replace("_", "-"); return { name: String((x && x.name) || l), lang: l, voiceURI: "native:" + ((x && x.name) || l), native: true }; })
+      .filter(function (v) { return /^en/i.test(v.lang); });
+    voices.sort(function (a, b) { return accentOf(a).localeCompare(accentOf(b)) || a.name.localeCompare(b.name); });
+    renderVoice(); if (!$("persScrim").hidden) renderPers(); if ($("onbVoices")) renderVoiceList($("onbVoices"));
+  };
+  var LANG_CODES = { nsl: "nsl", asl: "ase", bsl: "bfi" };
+  function sendSettings() { if (!socket) return; var v = chosenVoice(); sendUi({ type: "settings", language: LANG_CODES[lang] || lang, voice: v ? v.name : "" }); }
   function sayWith(text, v) {
+    var nb = insyncBridge(); if (nb) { try { nb.speak(text); } catch (e) {} return; }
     if (!canSpeak) return;
     try { var u = new SpeechSynthesisUtterance(text); if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "en-GB"; u.rate = prefs.rate; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) {}
   }
@@ -5709,7 +5729,7 @@ return exports;})();
       var b = el("button", "vopt"); b.type = "button"; b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(v.voiceURI === prefs.voice));
       var t = el("span", "vt"); t.appendChild(el("b", null, cleanName(v))); t.appendChild(el("small", null, accentOf(v) + " English")); b.appendChild(t);
       var pl = el("span", "vplay"); pl.innerHTML = icon("play"); b.appendChild(pl);
-      b.addEventListener("click", function () { prefs.voice = v.voiceURI; store.set("almero.voice", v.voiceURI); sayWith("Hi, I'm Alice. Nice to meet you.", v); renderVoiceList(box); });
+      b.addEventListener("click", function () { prefs.voice = v.voiceURI; store.set("almero.voice", v.voiceURI); sendSettings(); sayWith("Hi, I'm Alice. Nice to meet you.", v); renderVoiceList(box); });
       box.appendChild(b);
     });
   }
@@ -5823,6 +5843,7 @@ return exports;})();
   function setLive(on, why) {
     if (on === live) return;
     live = on; touch(); if (on) liveSince = performance.now(); sendUi({ type: "session", state: on ? "live" : "paused" });
+    var nbs = insyncBridge(); if (nbs) try { nbs.setSession(on ? "live" : "paused"); } catch (e) {}
     if (!on) {
       if (holo) holo.hands = [];
       $("pauseWhy").textContent = why === "auto"
@@ -5836,7 +5857,7 @@ return exports;})();
   $("sessBtn").addEventListener("click", function () { setLive(!live); });
   $("resumeBtn").addEventListener("click", function () { setLive(true); });
   setInterval(function () {
-    if (live && idleLimit && !demo && teach.state === "idle" && $("onb").hidden && !listening && performance.now() - lastActivity > idleLimit) setLive(false, "auto");
+    if (socket && socket.isMock() && live && idleLimit && !demo && teach.state === "idle" && $("onb").hidden && !listening && performance.now() - lastActivity > idleLimit) setLive(false, "auto");
   }, 1000);
 
   // ---------- microphone: the hearing person speaks, the avatar signs it
@@ -5847,12 +5868,18 @@ return exports;})();
     b.setAttribute("aria-label", on ? "Stop listening" : "Use this device's microphone");
   }
   function micUnavailable(why) {
-    toast(why || "The microphone isn't available here. Type instead, or open Almero in Chrome", true);
+    toast(why || "The microphone isn't available here. Type instead, or open InSync in Chrome", true);
     $("sayText").focus();
   }
   $("micBtn").addEventListener("click", function () {
+    var nb = insyncBridge();
+    if (nb) {
+      if (listening) { try { nb.stopListening(); } catch (e) {} setMic(false); return; }
+      try { nb.listen(); setMic(true); } catch (e) { setMic(false); micUnavailable(); }
+      return;
+    }
     if (listening && rec) { try { rec.stop(); } catch (e) {} return; }
-    if (!SR) return micUnavailable("This browser can't turn speech into text. Type instead, or open Almero in Chrome");
+    if (!SR) return micUnavailable("This browser can't turn speech into text. Type instead, or open InSync in Chrome");
     try {
       rec = new SR(); rec.lang = "en-GB"; rec.interimResults = true; rec.continuous = false;
       var finalText = "";
@@ -5866,6 +5893,7 @@ return exports;})();
     } catch (e) { setMic(false); micUnavailable(); }
   });
   function teacherSay(t, source) { t = t.trim(); if (!t) return; touch(); socket.teacherSays(t, source || "typed"); }
+  bridgeHandlers.speechResult = function (text) { setMic(false); var t = String(text == null ? "" : text).trim(); if (t) { $("sayText").value = ""; teacherSay(t, "device"); } };
   $("sayText").addEventListener("input", function () { touch(); var has = !!this.value.trim(); $("sendBtn").hidden = !has; $("micBtn").hidden = has; });
   $("comp").addEventListener("submit", function (e) { e.preventDefault(); var t = $("sayText").value; $("sayText").value = ""; $("sendBtn").hidden = true; $("micBtn").hidden = false; teacherSay(t); });
 
@@ -5986,7 +6014,7 @@ return exports;})();
 
   function stageStatus() {
     var t = "", cls = "";
-    if (stage.src === "sim") { t = "Glasses simulation"; cls = "ok"; }
+    if (stage.src === "sim") { t = socket.isMock() ? "Glasses simulation" : "Live from the app's camera"; cls = "ok"; }
     else if (stage.src === "file") { t = mp.state === "ready" ? (stage.hands.length ? "Hands found in video" : "Looking for hands…") : "Playing your video"; cls = stage.hands.length ? "ok" : "wait"; }
     else if (stage.camState === "starting") { t = "Starting camera…"; cls = "wait"; }
     else if (stage.camState === "blocked" || stage.camState === "none") { t = "Camera not available"; cls = "bad"; }
@@ -6087,8 +6115,8 @@ return exports;})();
   }
 
   // ---------- state
-  var teach = blankTeach();
-  function blankTeach() { return { state: "idle", source: "add", label: "", take: 0, of: 2, mode: "camera", sub: "idle", takes: [], raws: [], msg: "", score: null, usedVideo: false, mirrorRaw: false }; }
+  var teach = blankTeach(), saveTimer = 0, takeTimer = 0;
+  function blankTeach() { return { state: "idle", source: "add", label: "", take: 0, of: 2, mode: "camera", sub: "idle", takes: [], raws: [], msg: "", score: null, usedVideo: false, mirrorRaw: false, liveTakes: 0 }; }
   function sendUi(msg) { msg.ts = Date.now(); socket.send(JSON.stringify(msg)); }
   function studioOpen() { return teach.state === "capture" || teach.state === "check"; }
   var lastFocus = null;
@@ -6104,7 +6132,7 @@ return exports;})();
     if (teach.mode === "camera") {
       setTeach("capture");
       startCamera().then(function (ok) {
-        if (!ok && studioOpen()) { teach.mode = "sim"; teach.msg = "No camera here, so this uses the glasses simulation. Open Almero in Chrome and allow the camera to record yourself."; useSim(); renderDlg(); }
+        if (!ok && studioOpen()) { teach.mode = "sim"; teach.msg = "No camera here, so this uses the glasses simulation. Open InSync in Chrome and allow the camera to record yourself."; useSim(); renderDlg(); }
       });
       loadHands();
     } else { if (!live) setLive(true); useSim(); setTeach("capture"); }
@@ -6118,7 +6146,7 @@ return exports;})();
   }
   function resetTakes() {
     if (teach.takes.length && teach.mode === "sim") sendUi({ type: "teach_stop", label: "" });
-    teach.takes = []; teach.raws = []; teach.take = 0; teach.score = null;
+    teach.takes = []; teach.raws = []; teach.take = 0; teach.score = null; teach.liveTakes = 0; clearTimeout(takeTimer);
   }
 
   // ---------- capturing a take or a test
@@ -6132,7 +6160,11 @@ return exports;})();
       if (!studioOpen()) { stage.count.textContent = ""; return; }
       if (n > 0) { stage.count.textContent = n; n--; setTimeout(step, demo ? 450 / speed : 750); return; }
       stage.count.textContent = ""; rec.active = true; rec.frames = []; rec.purpose = purpose; teach.sub = "recording"; stage.rec.hidden = false; renderDlg();
-      if (teach.mode === "sim" && purpose === "take") { sendUi({ type: "teach_start", label: teach.label }); return; } // ends on teach_progress
+      if (teach.mode === "sim" && purpose === "take") {
+        sendUi({ type: "teach_start", label: teach.label }); // ends on teach_progress
+        if (!socket.isMock()) { clearTimeout(takeTimer); takeTimer = setTimeout(function () { if (teach.sub === "recording" && rec.active) { rec.active = false; stage.rec.hidden = true; setRing(0); teach.sub = "idle"; teach.msg = "No answer from the service for that take. Try again."; renderDlg(); } }, 15000); }
+        return;
+      }
       if (teach.mode === "sim") { simAttempt(); return; }
       var t0 = performance.now(), dur = 2600;
       (function prog() { if (!rec.active) return; var p = Math.min(1, (performance.now() - t0) / dur); setRing(p); if (p < 1) requestAnimationFrame(prog); else finishCapture(); })();
@@ -6149,7 +6181,35 @@ return exports;})();
       setTimeout(step, 60 / speed);
     })();
   }
+  function serviceTake(m) {
+    clearTimeout(takeTimer);
+    if (!studioOpen() || teach.state !== "capture") return;
+    rec.active = false; stage.rec.hidden = true; setRing(0);
+    if (m.of) teach.of = m.of;
+    teach.liveTakes++; teach.takes.push(null); teach.raws.push([]); teach.take = teach.takes.length; teach.sub = "idle";
+    teach.msg = "Take " + teach.take + " of " + teach.of + " recorded";
+    explain("alice", "Take " + teach.take + " recorded by the service");
+    renderDlg(); renderReadTeach();
+  }
+  function svcUpload(file) {
+    if (!file || teach.sub === "recording" || teach.sub === "uploading") return;
+    var nb = insyncBridge(), base = nb ? nb.serviceBase : location.origin;
+    if (!base) { teach.msg = "Upload failed: the app hasn't set the service address"; renderDlg(); return; }
+    var fd = new FormData();
+    fd.append("label", teach.label); fd.append("file", file, file.name || "sign.mp4"); fd.append("language", LANG_CODES[lang] || lang);
+    teach.sub = "uploading"; teach.msg = "Uploading " + (file.name || "your video") + "…"; renderDlg();
+    fetch(String(base).replace(/\/+$/, "") + "/teach/upload", { method: "POST", body: fd })
+      .then(function (r) { return r.json().catch(function () { return { ok: false, error: "HTTP " + r.status }; }); })
+      .then(function (j) {
+        teach.sub = "idle";
+        if (!j || j.ok !== true) { teach.msg = "Upload failed: " + ((j && (j.error || j.message || j.detail)) || "the service said no"); renderDlg(); return; }
+        teach.usedVideo = true; teach.takes.push(null); teach.raws.push([]); teach.take = teach.takes.length;
+        teach.msg = "Take " + teach.take + " recorded from your video"; renderDlg(); renderReadTeach();
+      })
+      .catch(function (e) { teach.sub = "idle"; teach.msg = "Upload failed: " + ((e && e.message) || "network error"); renderDlg(); });
+  }
   function uploadVideo(file) {
+    if (!socket.isMock()) return svcUpload(file);
     if (!file || teach.sub === "recording") return;
     teach.usedVideo = true; teach.msg = ""; stopCamera();
     var url = URL.createObjectURL(file);
@@ -6201,7 +6261,7 @@ return exports;})();
     function p(t, into) { (into || d).appendChild(el("p", null, t)); }
     function row(into) { var r = el("div", "row"); (into || d).appendChild(r); return r; }
     function btn(cls, text, fn, id) { var b = el("button", cls, text); b.type = "button"; if (id) b.id = id; b.addEventListener("click", fn); return b; }
-    var L = teach.label.toUpperCase(), busy = teach.sub === "countdown" || teach.sub === "recording";
+    var L = teach.label.toUpperCase(), busy = teach.sub === "countdown" || teach.sub === "recording" || teach.sub === "uploading", svcReady = !socket.isMock() && teach.take > 0 && (teach.take >= teach.of || teach.usedVideo);
     function stepsBar(into) {
       var st = el("div", "steps"), idx = { name: 0, capture: 1, check: 2, saving: 3, done: 3 }[s];
       ["Name it", "Record it twice", "Test it"].forEach(function (t, i) { st.appendChild(el("span", i === idx ? "on" : i < idx ? "done" : "", t)); });
@@ -6238,7 +6298,7 @@ return exports;})();
       var m = teach.msg || trackMsg; stage.msg.textContent = m; stage.msg.hidden = !m;
       var notReady = teach.mode === "camera" && (stage.src !== "camera" || mp.state !== "ready");
       var sh = stage.shutter, isTest = s === "check";
-      sh.disabled = busy || notReady || (isTest && teach.sub === "result");
+      sh.disabled = busy || notReady || (isTest && teach.sub === "result") || (!socket.isMock() && teach.take >= teach.of);
       sh.classList.toggle("recording", teach.sub === "recording");
       sh.classList.toggle("test", isTest);
       sh.setAttribute("aria-label", isTest ? "Test the sign" : "Record take " + (teach.take + 1));
@@ -6249,12 +6309,12 @@ return exports;})();
         ip.addEventListener("change", function () { setMode(o[0]); }); lb.appendChild(ip); lb.appendChild(el("span", null, o[1])); seg.appendChild(lb);
       });
       if (s === "capture") {
-        h(teach.take ? "Good. Sign " + L + " once more" : "Sign " + L, right);
+        h(svcReady && teach.take >= teach.of ? L + " is recorded" : teach.take ? "Good. Sign " + L + " once more" : "Sign " + L, right);
         p(busy ? (teach.sub === "countdown" ? "Get ready…" : "Recording. Sign it at a normal pace.")
           : notReady && mp.state === "loading" ? "Loading hand tracking…"
           : "Press the button, wait for 3, 2, 1, then sign. Keep your hands in the frame.", right);
-        right.appendChild(seg);
-        if (teach.mode === "camera") {
+        if (socket.isMock()) right.appendChild(seg);
+        if (teach.mode === "camera" || !socket.isMock()) {
           var up = el("label", "upl"); up.innerHTML = icon("up") + "<span>Upload a video instead</span>";
           var fi = el("input"); fi.type = "file"; fi.accept = "video/*"; fi.id = "tUpload"; fi.disabled = busy; fi.setAttribute("aria-label", "Upload a video of the sign");
           fi.addEventListener("change", function () { if (fi.files && fi.files[0]) uploadVideo(fi.files[0]); });
@@ -6263,6 +6323,7 @@ return exports;})();
         var r3 = row(right); r3.className = "row end";
         if (teach.takes.length) r3.appendChild(btn("ghost", "Start over", function () { resetTakes(); renderDlg(); }));
         r3.appendChild(btn("ghost", "Cancel", teachCancel));
+        if (svcReady) r3.appendChild(btn("act", "Save sign", teachSave, "tSave"));
         var hid = btn("act", "Record", function () { capture("take"); }, "tRec"); hid.className = "sr"; hid.disabled = sh.disabled; right.appendChild(hid);
       } else {
         h(teach.sub === "result" ? (teach.score >= 0.6 ? "I recognised " + L : "Not quite yet") : "Test it: sign " + L + " once more", right);
@@ -6303,12 +6364,24 @@ return exports;})();
   }
   function teachName(v) {
     teach.label = v.trim().toLowerCase(); if (!teach.label) return;
-    teach.takes = []; teach.raws = []; teach.take = 0; teach.mode = demo ? "sim" : "camera";
+    teach.takes = []; teach.raws = []; teach.take = 0; teach.mode = demo || !socket.isMock() ? "sim" : "camera";
     enterCapture();
     explain("alice", "Now she records the sign twice, and can watch her hand being tracked");
   }
   function teachSave() {
-    var label = teach.label; setTeach("saving");
+    var label = teach.label;
+    if (!socket.isMock()) {
+      if (!teach.liveTakes) { handle({ type: "sign_learned", label: label }); return; } // uploads are saved by the service already
+      setTeach("saving"); sendUi({ type: "teach_stop", label: label });
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(function () {
+        if (teach.state !== "saving") return;
+        teach.msg = "The service didn't confirm " + label.toUpperCase() + ". Check the connection and save again."; setTeach("capture");
+        toast("Couldn't save " + label.toUpperCase(), true);
+      }, 10000);
+      return;
+    }
+    setTeach("saving");
     if (teach.mode === "sim" && teach.takes.length >= 2) sendUi({ type: "teach_stop", label: label });
     else socket.learnNow(label);
   }
@@ -6347,6 +6420,10 @@ return exports;})();
   var holoActive = false;
   function handle(m) {
     switch (m.type) {
+      case "room":
+        var ri = $("roomInfo"), np = (m.participants || []).length;
+        ri.textContent = "Room " + m.code + " · " + np + (np === 1 ? " person" : " people"); ri.hidden = false;
+        break;
       case "status": $("conn").textContent = (m.latency_ms / 1000).toFixed(1) + " s"; break;
       case "caption": touch(); addLine(m.speaker, m.text); explain("bob", "The teacher speaks. It shows as a subtitle straight away"); break;
       case "avatar_play":
@@ -6359,7 +6436,7 @@ return exports;})();
         if (m.hands.length && !holoActive && !studioOpen()) { holoActive = true; explain("alice", "Alice signs. The glasses track 21 points on her hand, shown live under Your hands"); }
         if (!m.hands.length) holoActive = false;
         break;
-      case "sign_candidates": renderCands(m.items); verdict([el("span", null, "Checking my sign library…")]); explain("sys", "Almero compares her movement with every sign it knows and ranks its 3 best guesses"); break;
+      case "sign_candidates": renderCands(m.items); verdict([el("span", null, "Checking my sign library…")]); explain("sys", "InSync compares her movement with every sign it knows and ranks its 3 best guesses"); break;
       case "sign_recognized": touch(); lastConf = m.confidence; signed.push(m.label.toUpperCase()); showSigning(); verdict([el("span", "pill ok", "Got it"), el("span", null, m.label.toUpperCase())]); explain("sys", "Top guess is over the 60% line, so it's accepted: " + m.label.toUpperCase()); break;
       case "sentence":
         signed = []; addLine(m.speaker, m.text); speak(m.text);
@@ -6370,19 +6447,21 @@ return exports;})();
         signed = []; showSigning();
         var tb = el("button", "linkbtn", "Teach it"); tb.type = "button"; tb.addEventListener("click", function () { if (teach.state === "idle") { teach = blankTeach(); teach.source = "unknown"; setTeach("intro"); } });
         verdict([el("span", "pill warn", "Not sure"), el("span", null, "I don't know that sign yet"), tb]);
-        explain("sys", "No guess reaches 60%. Instead of guessing wrong, Almero asks to be taught");
+        explain("sys", "No guess reaches 60%. Instead of guessing wrong, InSync asks to be taught");
         if (teach.state === "idle") { teach = blankTeach(); teach.source = "unknown"; setTeach("intro"); }
         if (demo) autoTeach();
         break;
       case "teach_progress":
-        if (studioOpen() && teach.mode === "sim") finishCapture();
+        if (!socket.isMock()) serviceTake(m);
+        else if (studioOpen() && teach.mode === "sim") finishCapture();
         break;
       case "sign_learned":
+        clearTimeout(saveTimer);
         AlmeroMock.UNKNOWN_SIGNS.forEach(function (g) { if (socket.knows(g) && !taught[g]) taught[g] = m.label; });
         if (!mine.some(function (s) { return s.word === m.label; })) mine.push({ word: m.label, video: teach.usedVideo });
         teach.label = m.label; setTeach("done"); renderSigns(); refreshSignBtns();
         verdict([el("span", "pill ok", "Learned"), el("span", null, m.label.toUpperCase() + " added to My signs")]);
-        explain("sys", "Saved. Almero now recognises " + m.label.toUpperCase() + " and the avatar can sign it back");
+        explain("sys", "Saved. InSync now recognises " + m.label.toUpperCase() + " and the avatar can sign it back");
         toast(m.label.toUpperCase() + " added to My signs");
         if (demo) later(2000, function () { if (teach.state === "done") setTeach("idle"); });
         break;
@@ -6430,15 +6509,15 @@ return exports;})();
     $("onbSkip").hidden = step === "ready";
     if (step === "welcome") {
       left.appendChild(el("h1", null, "Sign, and be understood"));
-      left.appendChild(el("p", "lead", "Almero turns your signs into speech, and other people's speech into signs. It works through your glasses and phone, at school, at work or at the clinic."));
+      left.appendChild(el("p", "lead", "InSync turns your signs into speech, and other people's speech into signs. It works through your glasses and phone, at school, at work or at the clinic."));
       acts("Get started", next);
       right.appendChild(el("canvas")); right.id = "onbAvatarSlot";
     } else if (step === "how") {
       left.appendChild(el("h2", null, "How a conversation works"));
       var ul = el("ul", "howto");
-      [["hand", "You sign", "The glasses see your hands. Almero says it out loud for the other person.", "who-a"],
+      [["hand", "You sign", "The glasses see your hands. InSync says it out loud for the other person.", "who-a"],
        ["ear", "They speak", "The avatar signs their words back to you, with subtitles.", "who-b"],
-       ["plus", "Teach it new signs", "Names, places, school words. Almero learns from you and gets better each time.", ""]].forEach(function (r) {
+       ["plus", "Teach it new signs", "Names, places, school words. InSync learns from you and gets better each time.", ""]].forEach(function (r) {
         var li = el("li"), ic = el("span", "ic"); ic.innerHTML = icon(r[0]); li.appendChild(ic);
         var t = el("div"), b = el("b", r[3], r[1]); t.appendChild(b); t.appendChild(el("span", null, r[2])); li.appendChild(t); ul.appendChild(li);
       });
@@ -6453,7 +6532,7 @@ return exports;})();
         '<rect x="40" y="236" width="115" height="96" rx="14" fill="var(--raised)"/><text x="58" y="270" fill="var(--muted)">Signed</text><text x="58" y="298" fill="var(--text)" font-size="20">WHICH</text></g></svg>';
     } else if (step === "lang") {
       left.appendChild(el("h2", null, "Which sign language do you use?"));
-      left.appendChild(el("p", "lead", "Almero recognises your signs and signs back in the same language."));
+      left.appendChild(el("p", "lead", "InSync recognises your signs and signs back in the same language."));
       var box = el("div", "langs"); box.setAttribute("role", "radiogroup"); box.setAttribute("aria-label", "Sign language");
       [["nsl", "Nigerian Sign Language", "Ready", true], ["bsl", "British Sign Language", "Coming soon", false], ["asl", "American Sign Language", "Coming soon", false]].forEach(function (l) {
         var b = el("button", "lang"); b.type = "button"; b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(lang === l[0])); b.disabled = !l[3];
@@ -6467,14 +6546,14 @@ return exports;})();
         '<path d="M60 330 H340" stroke="var(--line2)"/><text x="60" y="356" font-family="Atkinson Hyperlegible Next, sans-serif" font-size="14" fill="var(--muted)">22 signs ready, and every one you teach</text></svg>';
     } else if (step === "you") {
       left.appendChild(el("h2", null, "Make it yours"));
-      left.appendChild(el("p", "lead", "Pick the voice Almero uses when it says your signs out loud, and the interpreter that signs to you."));
+      left.appendChild(el("p", "lead", "Pick the voice InSync uses when it says your signs out loud, and the interpreter that signs to you."));
       var vb = el("div", "vlist"); vb.id = "onbVoices"; vb.style.marginTop = "20px"; vb.style.maxHeight = "200px"; renderVoiceList(vb); left.appendChild(vb);
       left.appendChild(el("p", "plbl", "Interpreter skin tone")); var tb2 = el("div", "sws"); tb2.style.justifyContent = "flex-start"; tb2.style.marginTop = "8px"; renderToneList(tb2); left.appendChild(tb2);
       acts("Next", next, "Back", back);
       right.appendChild(el("canvas")); right.id = "onbAvatarSlot";
     } else if (step === "scan") {
       left.appendChild(el("h2", null, "Set up your face"));
-      left.appendChild(el("p", "lead", "Hold your phone in front of you. Almero maps your face once, so it knows where your chin, ears and forehead are, even when the glasses can't see your hands."));
+      left.appendChild(el("p", "lead", "Hold your phone in front of you. InSync maps your face once, so it knows where your chin, ears and forehead are, even when the glasses can't see your hands."));
       var sc = el("div", "scan"); sc.id = "scanSteps";
       ["Look straight", "Turn left", "Turn right"].forEach(function (t, i) { var sp = el("span", scanDone || i < scanProg ? "done" : i === scanProg && scanning ? "on" : "", t); sc.appendChild(sp); });
       left.appendChild(sc);
@@ -6515,8 +6594,8 @@ return exports;})();
   var TOUR = [
     { el: "avbox", t: "Your interpreter", d: "When someone speaks, the avatar signs their words to you, with subtitles underneath." },
     { el: "comp", t: "Type to sign", d: "Speech comes in through the glasses' mics. People can also type here, or use this device's mic." },
-    { el: "pip", t: "Your hands, live", d: "What the glasses see. When you sign, Almero shows what it read here and says it out loud." },
-    { el: "sessBtn", t: "Pause when you're done", d: "Turns off the glasses' camera and mics so they stop using battery. It also pauses itself after 2 quiet minutes." },
+    { el: "pip", t: "Your hands, live", d: "What the glasses see. When you sign, InSync shows what it read here and says it out loud." },
+    { el: "sessBtn", t: "Pause when you're done", d: "Turns off the glasses' camera and mics so they stop using battery. ", mock: " It also pauses itself after 2 quiet minutes." },
     { el: "voice", t: "Read aloud", d: "Turn the voice for your signed words on or off." },
     { el: "addSign", t: "Teach it new signs", d: "Record a name, a place or a school word with your camera, then test it." },
     { el: "persBtn", t: "Make it yours", d: "Choose your voice and the interpreter that signs to you." }
@@ -6533,7 +6612,7 @@ return exports;})();
     ring.style.left = (r.left - ar.left - pad) + "px"; ring.style.top = (r.top - ar.top - pad) + "px";
     ring.style.width = (r.width + pad * 2) + "px"; ring.style.height = (r.height + pad * 2) + "px";
     var tip = $("tourTip"); tip.textContent = "";
-    tip.appendChild(el("h4", null, step.t)); tip.appendChild(el("p", null, step.d));
+    tip.appendChild(el("h4", null, step.t)); tip.appendChild(el("p", null, step.d + (step.mock && socket && socket.isMock() ? step.mock : "")));
     var row = el("div", "row"); row.appendChild(el("span", "count", (tourIdx + 1) + " of " + TOUR.length));
     var btns = el("div", "row");
     var skip = el("button", "ghost", tourIdx ? "Back" : "Skip"); skip.type = "button"; skip.addEventListener("click", function () { if (tourIdx) { tourIdx--; placeTour(); } else endTour(); });
@@ -6560,8 +6639,81 @@ return exports;})();
   $("mScan").addEventListener("click", function () { toggleMenu(false); scanDone = false; openOnb(4); });
 
   // ======================================================== wiring
-  var socket = AlmeroMock.connect({ autoplay: false });
-  socket.onopen = function () { sendUi({ type: "ui_ready", view: "projector" }); };
+  // Transport. Returns a socket-like object {send(str), onopen, onmessage, onclose, onreset, close()}.
+  //  (a) InSync app bridge present (window.insync.native) -> send() = insync.send, incoming via insync.onMessage
+  //  (b) else ?service=ws://host:port/ws or ?mock=0 -> real WebSocket
+  //      (default ws(s)://<location.host>/ws?room=<?room=>&role=signer)
+  //  (c) else the built-in mock, exactly as before (standalone demo)
+  // If the bridge is not there yet, wait up to 500 ms for 'insync-ready' before falling back.
+  // The mock-only helpers (aliceSigns, knows, setAutoplay...) are no-ops off the mock; teacherSays
+  // becomes speech_text {text}.
+  function createSocket() {
+    var q = new URLSearchParams(location.search), queue = [], inner = null, closed = false;
+    var svc = q.get("service"), wantWs = !!svc || q.get("mock") === "0";
+    var wsUrl = svc || ((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws?room=" + encodeURIComponent(q.get("room") || "") + "&role=signer");
+    function mock() { return sock.mode === "mock" ? inner : null; }
+    var sock = {
+      mode: "pending", readyState: 0, onopen: null, onmessage: null, onclose: null, onreset: null, onmode: null,
+      isMock: function () { return sock.mode === "mock"; },
+      send: function (str) {
+        if (typeof str !== "string") str = JSON.stringify(str);
+        if (sock.mode === "bridge") { var b = insyncBridge(); if (b) try { b.send(str); } catch (e) {} return; }
+        if (inner && inner.readyState === 1) inner.send(str); else queue.push(str);
+      },
+      close: function () { closed = true; sock.readyState = 3; if (inner && inner.close) inner.close(); },
+      teacherSays: function (text, source) { if (mock()) return mock().teacherSays(text, source); sock.send(JSON.stringify({ type: "speech_text", text: text, ts: Date.now() })); },
+      aliceSigns: function (g) { if (mock()) mock().aliceSigns(g); },
+      knows: function (g) { return mock() ? mock().knows(g) : false; },
+      learnNow: function (label) { if (mock()) return mock().learnNow(label); if (label) sock.send(JSON.stringify({ type: "teach_stop", label: label, ts: Date.now() })); },
+      setAutoplay: function (on) { if (mock()) mock().setAutoplay(on); },
+      pause: function () { if (mock()) mock().pause(); },
+      resume: function () { if (mock()) mock().resume(); },
+      restart: function () { if (mock()) mock().restart(); },
+      setSpeed: function (x) { if (mock()) mock().setSpeed(x); }
+    };
+    function opened() {
+      sock.readyState = 1; var p = queue; queue = [];
+      if (sock.onopen) sock.onopen();
+      p.forEach(function (x) { sock.send(x); });
+    }
+    function incoming(e) { if (sock.onmessage) sock.onmessage(e); }
+    function connectWs() {
+      var ws; try { ws = new WebSocket(wsUrl); } catch (e) { if (!closed) setTimeout(connectWs, 2000); return; }
+      inner = ws; ws.onopen = opened; ws.onmessage = incoming;
+      ws.onclose = function () { sock.readyState = 3; if (sock.onclose) sock.onclose(); if (!closed) setTimeout(connectWs, 2000); };
+    }
+    function decide(mode) {
+      if (sock.mode !== "pending") return;
+      sock.mode = mode;
+      if (mode === "bridge") {
+        bridgeHandlers.onMessage = function (json) { incoming({ data: typeof json === "string" ? json : JSON.stringify(json) }); };
+        attachBridge(); opened();
+      } else if (mode === "ws") connectWs();
+      else {
+        inner = AlmeroMock.connect({ autoplay: false });
+        inner.onopen = opened; inner.onmessage = incoming;
+        inner.onreset = function () { if (sock.onreset) sock.onreset(); };
+      }
+      if (sock.onmode) sock.onmode(mode);
+    }
+    if (insyncBridge()) setTimeout(function () { decide("bridge"); }, 0);
+    else {
+      var onReady = function () { if (insyncBridge()) { window.removeEventListener("insync-ready", onReady); decide("bridge"); } };
+      window.addEventListener("insync-ready", onReady);
+      setTimeout(function () { window.removeEventListener("insync-ready", onReady); decide(wantWs ? "ws" : "mock"); }, 500);
+    }
+    return sock;
+  }
+  var socket = createSocket();
+  socket.onopen = function () { sendUi({ type: "ui_ready", view: insyncBridge() ? "phone" : "projector" }); sendSettings(); };
+  socket.onmode = function (mode) {
+    if (mode === "mock") return;
+    // demo leftovers belong to the mock only: hide the drawer and its menu entry
+    toggleDrawer(false);
+    var md = $("mDemo"); md.hidden = true; if (md.previousElementSibling && md.previousElementSibling.tagName === "HR") md.previousElementSibling.hidden = true;
+    if (insyncBridge()) { canSpeak = true; renderVoice(); }
+    refreshSignBtns();
+  };
   socket.onmessage = function (e) { handle(JSON.parse(e.data)); };
   socket.onreset = resetUI;
   $("addSign").addEventListener("click", startAdd);
@@ -6572,12 +6724,12 @@ return exports;})();
   var SIGN_BTNS = [["yes", "Yes"], ["no", "No"], ["help", "Help"], ["thanks", "Thank you"], ["question", "Question"]];
   function refreshSignBtns() {
     var box = $("signBtns"); box.textContent = "";
-    SIGN_BTNS.forEach(function (s) { var b = el("button", "sbtn", s[1]); b.type = "button"; b.disabled = demo; b.addEventListener("click", function () { if (!live) { toast("Almero is paused, so the glasses can't see Alice. Resume first", true); return; } touch(); socket.aliceSigns(s[0]); }); box.appendChild(b); });
+    SIGN_BTNS.forEach(function (s) { var b = el("button", "sbtn", s[1]); b.type = "button"; b.disabled = demo; b.addEventListener("click", function () { if (!live) { toast("InSync is paused, so the glasses can't see Alice. Resume first", true); return; } touch(); socket.aliceSigns(s[0]); }); box.appendChild(b); });
     var offered = false;
     AlmeroMock.UNKNOWN_SIGNS.forEach(function (g) {
       var known = socket.knows(g); if (!known && offered) return; if (!known) offered = true;
       var b = el("button", known ? "sbtn" : "sbtn unk", known ? cap(taught[g] || g) + " (taught)" : "A sign it doesn't know");
-      b.type = "button"; b.disabled = demo; b.addEventListener("click", function () { if (!live) { toast("Almero is paused, so the glasses can't see Alice. Resume first", true); return; } touch(); socket.aliceSigns(g); }); box.appendChild(b);
+      b.type = "button"; b.disabled = demo; b.addEventListener("click", function () { if (!live) { toast("InSync is paused, so the glasses can't see Alice. Resume first", true); return; } touch(); socket.aliceSigns(g); }); box.appendChild(b);
     });
   }
   function toggleDrawer(open) { var d = $("drawer"); d.hidden = open === undefined ? !d.hidden : !open; }
@@ -6585,7 +6737,7 @@ return exports;})();
   $("drawerX").addEventListener("click", function () { toggleDrawer(false); });
   document.addEventListener("keydown", function (e) {
     var tag = (e.target && e.target.tagName) || "";
-    if ((e.key === "d" || e.key === "D") && !/INPUT|TEXTAREA/.test(tag) && !e.metaKey && !e.ctrlKey && !e.altKey) toggleDrawer();
+    if ((e.key === "d" || e.key === "D") && socket.isMock() && !/INPUT|TEXTAREA/.test(tag) && !e.metaKey && !e.ctrlKey && !e.altKey) toggleDrawer();
     if (e.key === "Escape") {
       if (!$("persScrim").hidden) closePers();
       else if (tourIdx >= 0) endTour();
@@ -6598,7 +6750,7 @@ return exports;})();
     paused = false; socket.resume();
     $("demoBtn").innerHTML = demo ? icon("stop") + "Stop demo" : icon("play") + "Play demo";
     $("pauseBtn").disabled = !demo; $("pauseBtn").textContent = "Pause";
-    $("demoHint").textContent = demo ? "Playing. Stop it to sign as Alice yourself" : "A teacher talks to Alice, she replies, then teaches Almero a new sign";
+    $("demoHint").textContent = demo ? "Playing. Stop it to sign as Alice yourself" : "A teacher talks to Alice, she replies, then teaches InSync a new sign";
     explain("sys", demo ? "Demo started: a teacher talking to Alice in class" : "Demo stopped. Speak, type, or sign as Alice with the buttons");
     refreshSignBtns();
   });

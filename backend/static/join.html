@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>InSync room</title>
+<style>
+  :root { --bg:#0e1116; --panel:#171b22; --line:#262c36; --text:#e6e9ef; --muted:#8b93a1; --accent:#4f8cff; --signer:#f5b84b; --bad:#e5534b; --ok:#3fb950; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--text); font:16px/1.4 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; }
+  body { display:flex; flex-direction:column; max-width:720px; margin:0 auto; padding:12px 16px; }
+  header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .code { font-size:22px; font-weight:700; letter-spacing:.15em; }
+  .conn { font-size:13px; color:var(--muted); }
+  .conn.ok { color:var(--ok); } .conn.bad { color:var(--bad); }
+  #people { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
+  .chip { background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:2px 10px; font-size:13px; }
+  .chip.signer { border-color:var(--signer); color:var(--signer); }
+  #captions { flex:1; overflow-y:auto; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px; min-height:200px; }
+  .cap { padding:6px 8px; border-radius:8px; margin-bottom:6px; }
+  .cap .who { font-size:12px; color:var(--muted); }
+  .cap.signer { background:rgba(245,184,75,.12); border-left:3px solid var(--signer); }
+  .cap.signer .who { color:var(--signer); }
+  .cap .txt { font-size:18px; }
+  .empty { color:var(--muted); text-align:center; margin-top:40px; }
+  #controls { padding:12px 0 calc(12px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; align-items:center; gap:10px; }
+  #mic { width:84px; height:84px; border-radius:50%; border:none; background:var(--accent); color:#fff; font-size:15px; font-weight:600; cursor:pointer; }
+  #mic.on { background:var(--bad); animation:pulse 1.2s infinite; }
+  #mic:disabled { background:var(--line); color:var(--muted); cursor:default; }
+  @keyframes pulse { 50% { box-shadow:0 0 0 12px rgba(229,83,75,.2); } }
+  #micnote { font-size:13px; color:var(--muted); min-height:1em; }
+  form { display:flex; gap:8px; width:100%; }
+  input { flex:1; min-width:0; background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:16px; }
+  button.send { background:var(--accent); color:#fff; border:none; border-radius:10px; padding:10px 16px; font-size:16px; cursor:pointer; }
+  #namebox { position:fixed; inset:0; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; padding:16px; }
+  #namebox .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px; width:100%; max-width:360px; display:flex; flex-direction:column; gap:12px; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<header>
+  <div><div class="conn" id="conn">Connecting…</div><div class="code" id="code"></div></div>
+  <div class="conn" id="me"></div>
+</header>
+<div id="people"></div>
+<div id="captions"><div class="empty" id="empty">Captions will appear here.</div></div>
+<div id="controls">
+  <button id="mic" type="button">Talk</button>
+  <div id="micnote"></div>
+  <form id="textform"><input id="text" placeholder="Type to the room…" autocomplete="off"><button class="send">Send</button></form>
+</div>
+<div id="namebox" hidden>
+  <form class="card" id="nameform">
+    <div><b>Join room <span id="code2"></span></b></div>
+    <input id="name" placeholder="Your name" maxlength="40" autocomplete="name">
+    <button class="send">Join</button>
+  </form>
+</div>
+<script>
+// Room code from /join/<code>
+const code = (location.pathname.split("/").filter(Boolean).pop() || "").toUpperCase();
+const $ = id => document.getElementById(id);
+$("code").textContent = code; $("code2").textContent = code;
+let ws = null, name = "", signerName = "";
+
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+                set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+// Name
+function start(n) { name = n; $("me").textContent = name; $("namebox").hidden = true; connect(); }
+const saved = store.get("insync.name");
+if (saved) start(saved); else { $("namebox").hidden = false; $("name").focus(); }
+$("nameform").onsubmit = e => { e.preventDefault(); const n = $("name").value.trim(); if (!n) return; store.set("insync.name", n); start(n); };
+
+// Connection with a 2 s reconnect loop
+function setConn(text, cls) { $("conn").textContent = text; $("conn").className = "conn " + (cls || ""); }
+function connect() {
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  ws = new WebSocket(`${proto}://${location.host}/ws?room=${encodeURIComponent(code)}&role=participant&name=${encodeURIComponent(name)}`);
+  ws.onopen = () => setConn("Connected", "ok");
+  ws.onmessage = e => { try { onMessage(JSON.parse(e.data)); } catch (err) { console.warn(err); } };
+  ws.onclose = e => {
+    setConn(e.code === 4404 ? "Room not found, retrying…" : "Reconnecting…", "bad");
+    setTimeout(connect, 2000);
+  };
+}
+function send(m) { if (ws && ws.readyState === 1) { ws.send(JSON.stringify({ ts: Date.now(), ...m })); return true; } return false; }
+
+// Messages
+function onMessage(m) {
+  if (m.type === "room") showPeople(m.participants || []);
+  else if (m.type === "caption") addCaption(m.speaker, m.text);
+  else if (m.type === "speak") speak(m.text);
+}
+function showPeople(list) {
+  const s = list.find(p => p.role === "signer"); signerName = s ? s.name : signerName;
+  $("people").innerHTML = "";
+  for (const p of list) {
+    const c = document.createElement("span");
+    c.className = "chip" + (p.role === "signer" ? " signer" : "");
+    c.textContent = p.name + (p.role === "signer" ? " (signer)" : "");
+    $("people").appendChild(c);
+  }
+}
+function addCaption(speaker, text) {
+  if (!text) return;
+  $("empty").hidden = true;
+  const box = $("captions"), d = document.createElement("div");
+  d.className = "cap" + (speaker === signerName ? " signer" : "");
+  d.innerHTML = '<div class="who"></div><div class="txt"></div>';
+  d.querySelector(".who").textContent = speaker || "";
+  d.querySelector(".txt").textContent = text;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+
+// Voice out: the signer's sentences
+function speak(text) {
+  // TODO(phase2): ElevenLabs voice (the signer's chosen voice) instead of the browser's default
+  if (!text || !window.speechSynthesis) return;
+  speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+}
+
+// Voice in: browser speech recognition, one utterance per tap
+// TODO(phase2): ElevenLabs / cloud STT where webkitSpeechRecognition is missing
+function sendText(text) {
+  text = text.trim();
+  if (text) send({ type: "speech_text", text });   // TODO(phase2): Claude context step happens server-side
+}
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (!SR) { $("mic").disabled = true; $("micnote").textContent = "Mic not supported, type below"; }
+else {
+  let rec = null;
+  $("mic").onclick = () => {
+    if (rec) { rec.stop(); return; }
+    rec = new SR(); rec.continuous = false; rec.interimResults = false; rec.lang = navigator.language || "en-US";
+    rec.onresult = e => { for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) sendText(e.results[i][0].transcript); };
+    rec.onerror = e => { $("micnote").textContent = "Mic: " + e.error; };
+    rec.onend = () => { rec = null; if ($("micnote").textContent === "Listening…") $("micnote").textContent = ""; $("mic").classList.remove("on"); $("mic").textContent = "Talk"; };
+    $("micnote").textContent = "Listening…"; $("mic").classList.add("on"); $("mic").textContent = "Stop";
+    rec.start();
+  };
+}
+$("textform").onsubmit = e => { e.preventDefault(); sendText($("text").value); $("text").value = ""; };
+</script>
+</body>
+</html>
