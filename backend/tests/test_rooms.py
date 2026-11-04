@@ -45,13 +45,11 @@ async def main():
     code = room["code"]
     check("POST /rooms", len(code) == 4 and room["link"].endswith(f"/join/{code}"), room)
 
-    # Unknown room for a participant -> 4404
-    async with websockets.connect(f"{wsbase}?room=ZZZZ&role=participant&name=X") as bad:
-        try:
-            await asyncio.wait_for(bad.recv(), 3)
-        except websockets.ConnectionClosed:
-            pass
-        check("participant to unknown room closed 4404", bad.close_code == 4404, bad.close_code)
+    # Unknown room for a participant: the room is created and the participant waits for the signer
+    async with websockets.connect(f"{wsbase}?room=ZZZZ&role=participant&name=X") as early:
+        first = json.loads(await asyncio.wait_for(early.recv(), 3))
+        check("participant to unknown room joins and waits for the signer",
+              first["type"] == "room" and first["code"] == "ZZZZ" and not any(p["role"] == "signer" for p in first["participants"]), first)
 
     sig_seen, par_seen = [], []
     async with websockets.connect(f"{wsbase}?room={code}&role=signer&name=Alice", max_size=None) as sig, \
@@ -118,17 +116,17 @@ async def main():
         await par.close()
         m = await wait_for(sig_seen, "room", s0)
         check("signer gets room after participant leaves", m is not None and len(m["participants"]) == 1, m)
-        await send(sig, type="speech_text", text="still here")
+        await send(sig, type="speech_text", text="hello")   # a word the avatar can sign, so avatar_play is emitted
         check("signer still served after participant left", await wait_for(sig_seen, "avatar_play", s0) is not None)
         for t in tasks:
             t.cancel()
 
     await asyncio.sleep(0.5)
     try:
-        http("GET", f"{a.http}/rooms/{code}")
-        check("room removed when empty", False)
+        left = http("GET", f"{a.http}/rooms/{code}")
+        check("room kept while empty (reconnects find it)", left["code"] == code and left["participants"] == [], left)
     except urllib.error.HTTPError as e:
-        check("room removed when empty", e.code == 404, e.code)
+        check("room kept while empty (reconnects find it)", False, e.code)
 
     print(f"\n{sum(results)}/{len(results)} passed")
     raise SystemExit(0 if all(results) else 1)

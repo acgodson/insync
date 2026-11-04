@@ -103,12 +103,12 @@ async def ws(socket: WebSocket, room: str = "", role: str = "signer", name: str 
     await socket.accept()
     code = room.upper()
     signer = role != "participant"
+    rooms.sweep()
     r = rooms.rooms.get(code)
     if r is None:
-        if not signer:
-            await socket.close(code=4404, reason="no such room")
-            return
-        r = rooms.create(code or None)   # unknown code or no code: create it (private room without a code)
+        # Unknown code: create it. A participant can arrive before the signer (or after a service
+        # restart) and simply waits for the signer; no code at all gives a private room.
+        r = rooms.create(code or None)
     if signer:
         await r.join_signer(socket, name or "Signer")
     else:

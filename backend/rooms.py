@@ -7,6 +7,7 @@ from session import Session
 
 CODE_LETTERS = "ABCDEFGHJKMNPQRSTUVWXYZ"   # no I, L, O
 rooms = {}                                  # code -> Room
+ROOM_TTL_S = 3 * 3600                       # an empty room is kept this long so reconnects and late joiners find it
 
 
 def new_code():
@@ -40,6 +41,7 @@ class Room:
         self.signer_name = "Signer"
         self.participants = []      # [{"name", "ws"}]
         self.session = None
+        self.last_active = time.time()
 
     def people(self):
         out = [{"name": self.signer_name, "role": "signer"}] if self.signer else []
@@ -84,6 +86,7 @@ class Room:
     # --- Joining and leaving ---
 
     async def join_signer(self, ws, name):
+        self.last_active = time.time()
         old = self.signer
         self.signer, self.signer_name = ws, name
         if old is not None:
@@ -98,6 +101,7 @@ class Room:
         await self.broadcast_room()
 
     async def join_participant(self, ws, name):
+        self.last_active = time.time()
         self.participants.append({"name": name, "ws": ws})
         await self.broadcast_room()
 
@@ -105,11 +109,12 @@ class Room:
         if self.signer is ws:
             self.signer = None
         self.participants = [p for p in self.participants if p["ws"] is not ws]
+        self.last_active = time.time()
         if self.empty:
+            # Keep the room (code, link) alive for ROOM_TTL_S; the recognition session is rebuilt on the next signer join
             if self.session:
                 self.session.close()
                 self.session = None
-            rooms.pop(self.code, None)
         else:
             await self.broadcast_room()
 
@@ -127,3 +132,11 @@ class Room:
             await self.session.on_speech(text, speaker=name)
         else:
             await self.to_participants(message("caption", speaker=name, text=text))
+
+
+def sweep():
+    """Drop rooms that have been empty for longer than ROOM_TTL_S."""
+    now = time.time()
+    for code, r in list(rooms.items()):
+        if r.empty and now - r.last_active > ROOM_TTL_S:
+            rooms.pop(code, None)
