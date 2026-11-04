@@ -23,6 +23,7 @@ backend/language/vocab.local.json
 *.jsonl
 # Web: the original teammate build kept only for diffing
 /web/dist/index.original.html
+/web/dist/index.prev.html
 # Build output (app/ has its own .gitignore for Flutter)
 node_modules/
 .vscode/
