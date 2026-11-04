@@ -15,7 +15,7 @@ let loading: Promise<HandLandmarker> | null = null;
 export function loadHandTracker() {
   loading ??= (async () => {
     const { FilesetResolver, HandLandmarker: Landmarker } = await import("@mediapipe/tasks-vision");
-    const files = await FilesetResolver.forVisionTasks(`${import.meta.env.BASE_URL}mediapipe/wasm`);
+    const files = await FilesetResolver.forVisionTasks(import.meta.env.VITE_MEDIAPIPE_WASM ?? `${import.meta.env.BASE_URL}mediapipe/wasm`);
     const options = (delegate: "GPU" | "CPU") => ({ baseOptions: { modelAssetPath: MODEL, delegate }, runningMode: "VIDEO" as const, numHands: 2 });
     return Landmarker.createFromOptions(files, options("GPU")).catch(() => Landmarker.createFromOptions(files, options("CPU")));
   })();

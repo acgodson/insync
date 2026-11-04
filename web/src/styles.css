@@ -217,7 +217,7 @@ body.split iframe { width: 100%; height: 100vh; border: 0; display: block; }
 .composer input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; font-size: 16px; }
 .composer input::placeholder { color: var(--muted); }
 
-.toast { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 50; max-width: calc(100% - 32px); padding: 8px 12px; border-radius: 8px; background: var(--raised); border: 1px solid var(--line2); font-size: 13px; }
+.toast { position: absolute; top: 56px; left: 50%; transform: translateX(-50%); z-index: 50; max-width: calc(100% - 32px); padding: 8px 12px; border-radius: 8px; background: var(--raised); border: 1px solid var(--line2); font-size: 13px; }
 
 /* Shared controls */
 .act, .ghost { height: 44px; padding: 0 20px; border-radius: 8px; font-size: 15px; font-weight: 500; transition: background-color 0.15s var(--ease); }
