@@ -2161,6 +2161,119 @@ New:
 
 All 14 occurrences of `Almero` (title, landing x6, join role text, room mark `aria-label`, `const li="Almero"`, hero lines x2, tour x3) -> `InSync`.
 
+
+### N45 to N52: participant typing / mic always reach the socket, role labels, per-role names (applied to the committed file, after the brand edits)
+
+#### N45: Composer (Send button and Enter) off the mock: speech_text {text, source:"typed"} goes through the live connection's say(), which sends now or, while the socket is reconnecting, queues it and sends it on the next open (a toast says so) instead of dropping it
+
+Offset 22357628.
+
+Old:
+```js
+if(!h.send({type:"speech_text",text:C,source:"typed"}))return kn(
+```
+New:
+```js
+if(!(h.mock?h.send({type:"speech_text",text:C,source:"typed"}):insyncSay(C,"typed")))return kn(
+```
+
+#### N46: Mic (browser SpeechRecognition) off the mock: final results go through the same say() path
+
+Offset 22354440.
+
+Old:
+```js
+le(),k.hidden=!0,h.send({type:"speech_text",text:x,source:"speech"})
+```
+New:
+```js
+le(),k.hidden=!0,h.mock?h.send({type:"speech_text",text:x,source:"speech"}):insyncSay(x,"speech")
+```
+
+#### N47: insyncSay(text, source): module-level entry to the live connection (bridge: insync.send; live: the current WebSocket)
+
+Offset 22305930.
+
+Old:
+```js
+INS.send=m=>INS.conn?INS.conn.send(m):!1;
+```
+New:
+```js
+INS.send=m=>INS.conn?INS.conn.send(m):!1;function insyncSay(t,src){return!!INS.conn&&INS.conn.say(t,src)}
+```
+
+#### N48: Connection: say() (send or queue while reconnecting), and the outbox is flushed after ui_ready / settings / session on every open
+
+Offset 22316592.
+
+Old:
+```js
+const conn={send:out,close(){closed=!0,clearInterval(timer),ws&&ws.close()}};INS.conn=conn;
+```
+New:
+```js
+const outbox=[],conn={send:out,close(){closed=!0,clearInterval(timer),ws&&ws.close()},say(t,src){const m={type:"speech_text",text:t,source:src};if(raw(m))return!0;if(closed)return!1;outbox.push(m),kn("Reconnecting. Your words will be sent as soon as you're back");return!0}};INS.conn=conn;
+```
+
+#### N49: On every open, after the hello messages, send anything typed or said while the socket was down
+
+Offset 22315847.
+
+Old:
+```js
+function hello(){status("open"),raw({type:"ui_ready",view:"phone"}),raw({type:"settings",language:INS.lang(),voice:$m()}),INS.mode==="live"&&raw({type:"session",state:INS.isLive()?"live":"paused"})}
+```
+New:
+```js
+function hello(){status("open"),raw({type:"ui_ready",view:"phone"}),raw({type:"settings",language:INS.lang(),voice:$m()}),INS.mode==="live"&&raw({type:"session",state:INS.isLive()?"live":"paused"});for(;outbox.length&&raw(outbox[0]);)outbox.shift()}
+```
+
+#### N50: Text box label by role: participants 'Say something to the signer', the signer keeps 'Someone next to me: type what they say'; at /join the name is remembered as insync.guestName (I speak) so a signer tab and a participant tab in the same browser profile don't overwrite each other's name
+
+Offset 22311153.
+
+Old:
+```js
+for(const id of["addSign","pauseBtn"])ee(id).hidden=viewer;
+```
+New:
+```js
+for(const id of["addSign","pauseBtn"])ee(id).hidden=viewer;{const sy=ee("say"),ph=viewer?"Say something to the signer":"Someone next to me: type what they say";sy.placeholder=ph,sy.setAttribute("aria-label",ph),ee("micBtn").title=viewer?"Speak to the signer: your words are captioned and signed":"Someone next to me speaks: captions their words";INS.joinCode&&xn.set(viewer?"guestName":"name",me.name)}
+```
+
+#### N51: Join submit at /join/CODE does not write insync.name / insync.role (shared by every tab of the origin; the connection stores the name per role, N50)
+
+Offset 22322423.
+
+Old:
+```js
+s&&(xn.set("name",S),xn.set("role",l))
+```
+New:
+```js
+s&&!INS.joinCode&&(xn.set("name",S),xn.set("role",l))
+```
+
+#### N52: Join screen at /join/CODE prefills the participant name from ?name= or insync.guestName, never the signer's stored name
+
+Offset 22309487.
+
+Old:
+```js
+const nm=ee("joinName");nm.placeholder="Your name",xn.get("name")||q.get("name")||(nm.value="");
+```
+New:
+```js
+const nm=ee("joinName");nm.placeholder="Your name",jc?nm.value=q.get("name")||xn.get("guestName")||"":xn.get("name")||q.get("name")||(nm.value="");
+```
+
+Verification (local service, restarted; headless Chrome, signer with the wave camera): participant at `/join/CODE` types "Welcome" + Enter and "Welcome" + Send, both with the
+signer and participant as two tabs of the SAME profile and in two separate browsers. Server log each time: `participant Bob sent 'speech_text' 'Welcome'` twice; the signer page
+gets `caption {speaker: Bob, text: Welcome}` + `avatar_play {signs:[HELLO]}` and shows "Bob: Welcome". Participant box reads "Say something to the signer", the signer's
+"Someone next to me: type what they say". With the service stopped, typed text shows "Reconnecting. Your words will be sent as soon as you're back" and arrives
+(`sent 'speech_text' 'Queued hello'`) right after the reconnect. A participant tab no longer changes the signer tab's stored name (insync.guestName).
+
 ### N verification
 
 - `html.parser` parses the file; both inline scripts pass `node --check` (the module checked as `.mjs`).
