@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f0f10" />
+    <title>Almero</title>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="i-mark" viewBox="0 0 24 24"><path d="M4 12a5 5 0 0 1 5-5h2M20 12a5 5 0 0 1-5 5h-2" /><path d="M9 4.5 11.5 7 9 9.5M15 14.5 12.5 17l2.5 2.5" /></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14" /></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5v14l11-7z" /></symbol>
+      <symbol id="i-speaker" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z" /><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" /></symbol>
+      <symbol id="i-send" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></symbol>
+      <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6" /></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" /></symbol>
+      <symbol id="i-hand" viewBox="0 0 24 24"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V11M11 10V4.5a1.5 1.5 0 0 1 3 0V11M14 10.5V6a1.5 1.5 0 0 1 3 0v7a7 7 0 0 1-7 7h-.5a6 6 0 0 1-5-2.7L3 15a1.5 1.5 0 0 1 2.4-1.8L8 15" /></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+      <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14" /></symbol>
+      <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></symbol>
+      <symbol id="i-mic-off" viewBox="0 0 24 24"><path d="M9 9v2a3 3 0 0 0 5 2.2M15 9V6a3 3 0 0 0-5.7-1.3M5 11a7 7 0 0 0 11.3 5.5M19 11a7 7 0 0 1-.6 2.8M12 18v3M4 4l16 16" /></symbol>
+      <symbol id="i-cam" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2" /><path d="m16 10 5-3v10l-5-3" /></symbol>
+      <symbol id="i-cam-off" viewBox="0 0 24 24"><path d="M9 6h5a2 2 0 0 1 2 2v3l5-3v9M16 16v0a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 1-1.7M3 3l18 18" /></symbol>
+      <symbol id="i-cc" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M10.5 10.5a2 2 0 1 0 0 3M17 10.5a2 2 0 1 0 0 3" /></symbol>
+      <symbol id="i-more" viewBox="0 0 24 24"><path d="M12 5h.01M12 12h.01M12 19h.01" stroke-width="2.5" /></symbol>
+      <symbol id="i-leave" viewBox="0 0 24 24"><path d="M3 14c5-4.5 13-4.5 18 0l-2.5 3-3.5-1.500V13c-2-.6-4-.6-6 0v2.5L5.5 17z" /></symbol>
+      <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5" /><path d="M3 20a6 6 0 0 1 12 0M16 4.8a3.5 3.5 0 0 1 0 6.4M21 20a6 6 0 0 0-3.5-5.5" /></symbol>
+      <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4zM8 9h8M8 12h5" /></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 4h6l-1 6 3 3v2H7v-2l3-3zM12 15v5" /></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15H4V4h11v1" /></symbol>
+      <symbol id="i-signs" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" /><path d="M4 19V5M8 7h7" /></symbol>
+      <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7" /></symbol>
+    </svg>
+
+    <main class="app" id="app">
+      <section class="landing" id="landing" hidden aria-label="About Almero">
+        <header class="land-top">
+          <div class="brand"><svg class="mark"><use href="#i-mark" /></svg><span>Almero</span></div>
+          <button class="ghost small" id="landTop" type="button">Open the meeting room</button>
+        </header>
+        <div class="land-hero">
+          <div class="land-copy">
+            <h1>A meeting room where Deaf and hearing colleagues each work in their own language</h1>
+            <p class="lead">Spoken words become captions and signing. Signs become English, read aloud for the room. Everyone stays in the same conversation.</p>
+            <button class="act" id="landCta" type="button">Open the meeting room</button>
+            <p class="land-note">Experimental prototype. British Sign Language only.</p>
+          </div>
+          <div class="land-demo" aria-hidden="true">
+            <div class="land-frame">
+              <div class="tile interp" id="heroTile">
+                <span class="tile-chip" id="heroChip">Ready</span>
+                <div class="band land-band"><div class="caps" id="heroCaps"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <section class="land-section land-two">
+          <div>
+            <h2>When someone speaks</h2>
+            <div class="turn bob"><span class="who">Sam speaks</span><span class="turn-words">Can you take the client call on Monday?</span><span class="turn-meta">Captioned straight away, and signed by the avatar</span></div>
+          </div>
+          <div>
+            <h2>When someone signs</h2>
+            <div class="turn alice"><span class="who">Alice, via Almero</span><span class="turn-words">Yes. What time is it?</span><span class="turn-meta">Read from her hands, written in English, spoken for the room</span></div>
+          </div>
+        </section>
+        <section class="land-section land-split">
+          <h2>“I don't know that sign yet”</h2>
+          <p class="lead">Almero says when it's unsure, instead of guessing. Teach it a client's name or a work word: record it twice, test it, save it. Then sign it again, and it's understood.</p>
+        </section>
+        <section class="land-section land-split">
+          <h2>Alongside human interpreters, not instead of them</h2>
+          <p class="lead">Book a qualified interpreter for interviews, medical, legal and big meetings. Almero is for the everyday calls that often happen with no support at all.</p>
+        </section>
+        <section class="land-section land-split">
+          <h2>Where it stands</h2>
+          <p class="lead">A hackathon prototype. The avatar signs one sign at a time, without facial grammar, so it isn't full BSL. Deaf users haven't tested it yet, and that comes next.</p>
+        </section>
+        <section class="land-end">
+          <button class="act" id="landEnd" type="button">Open the meeting room</button>
+        </section>
+      </section>
+
+      <section class="join" id="join" hidden aria-label="Join the meeting">
+        <button class="back" id="joinBack" type="button"><svg class="i"><use href="#i-back" /></svg>Back</button>
+        <div class="join-in">
+          <div class="join-left">
+            <div class="preview" id="preview">
+              <p class="preview-msg" id="previewMsg">Starting camera</p>
+            </div>
+            <div class="join-devices">
+              <button class="round" id="joinCam" type="button" aria-label="Turn camera off" aria-pressed="true"><svg class="i"><use href="#i-cam" /></svg></button>
+              <button class="round" id="joinMic" type="button" aria-label="Turn microphone off" aria-pressed="true"><svg class="i"><use href="#i-mic" /></svg></button>
+              <div class="meter-wrap" id="joinMeterWrap"><span class="field-label">Mic level</span><div class="level" aria-hidden="true"><i id="joinLevel"></i></div></div>
+            </div>
+          </div>
+          <form class="join-right" id="joinForm" autocomplete="off">
+            <h1 id="joinTitle">Team stand-up</h1>
+            <div class="join-code">
+              <label class="sr" for="joinRoom">Room code</label>
+              <input class="code-input" id="joinRoom" type="text" value="alm-7k2-q9p" spellcheck="false" />
+              <button class="round small" id="joinCopy" type="button" aria-label="Copy room code"><svg class="i"><use href="#i-copy" /></svg></button>
+            </div>
+            <label class="field-label" for="joinName">Your name</label>
+            <input class="teach-input" id="joinName" type="text" maxlength="40" />
+            <p class="field-label" id="roleLabel">How will you join?</p>
+            <div class="roles" role="radiogroup" aria-labelledby="roleLabel">
+              <button class="role" id="roleSign" type="button" role="radio" aria-checked="true" data-role="sign"><b>I sign (BSL)</b><small>A signing avatar and captions show what people say. Almero speaks your signs for them</small></button>
+              <button class="role" id="roleSpeak" type="button" role="radio" aria-checked="false" data-role="speak"><b>I speak</b><small>Your words are captioned and signed. You hear what the signer says</small></button>
+            </div>
+            <p class="join-tip" id="joinTip" hidden>Say one short sentence, then wait. Signing takes longer than speech, so Alice needs time to watch and reply.</p>
+            <button class="act" id="joinNow" type="submit">Join now</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="left" id="left" hidden aria-label="You left the meeting">
+        <h1>You left the meeting</h1>
+        <div class="acts"><button class="act" id="rejoin" type="button">Rejoin</button><button class="ghost" id="leftHome" type="button">Back to home</button></div>
+      </section>
+
+      <section class="room" id="room" hidden aria-label="Meeting room">
+        <header class="room-top">
+          <div class="room-info">
+            <span id="clock"></span><span class="dot-sep" aria-hidden="true">·</span><span id="roomName"></span><span class="dot-sep" aria-hidden="true">·</span><span class="elapsed" id="elapsed">00:00</span>
+            <button class="round small" id="infoBtn" type="button" aria-label="Meeting details" aria-expanded="false"><svg class="i"><use href="#i-info" /></svg></button>
+            <div class="info-pop" id="infoPop" hidden></div>
+          </div>
+          <div class="room-right">
+            <span class="status" id="status" role="status"><i></i><span id="statusText">Live</span></span>
+            <svg class="mark" aria-label="Almero"><use href="#i-mark" /></svg>
+          </div>
+        </header>
+
+        <div class="room-body">
+          <div class="room-main">
+            <div class="tiles">
+              <div class="pinned" id="pinned"></div>
+              <div class="strip" id="strip"></div>
+            </div>
+          </div>
+          <aside class="panel" id="panel" hidden>
+            <div class="panel-head">
+              <h2 id="panelTitle"></h2>
+              <button class="round small" id="panelClose" type="button" aria-label="Close panel"><svg class="i"><use href="#i-x" /></svg></button>
+            </div>
+            <div class="panel-part" id="partPeople"></div>
+            <div class="panel-part" id="partTranscript">
+              <div class="transcript" id="transcript"></div>
+              <form class="composer" id="composer" autocomplete="off">
+                <label class="sr" for="say">Type a message</label>
+                <input id="say" type="text" placeholder="Type a message" enterkeyhint="send" maxlength="300" />
+                <button class="round small" type="submit" aria-label="Send"><svg class="i"><use href="#i-send" /></svg></button>
+              </form>
+            </div>
+            <div class="panel-part" id="partSigns">
+              <div class="library-head">
+                <div class="seg" id="signFilter" role="radiogroup" aria-label="Show">
+                  <button class="seg-btn" type="button" role="radio" data-f="all" aria-checked="true">All</button>
+                  <button class="seg-btn" type="button" role="radio" data-f="yours" aria-checked="false">Yours</button>
+                </div>
+                <span class="count" id="signCount"></span>
+                <button class="act small" id="signAdd" type="button">Add a sign</button>
+              </div>
+              <div class="sign-list" id="signList"></div>
+            </div>
+          </aside>
+        </div>
+
+        <nav class="bar" aria-label="Meeting controls">
+          <div class="bar-group">
+            <button class="ctl" id="micBtn" type="button" aria-pressed="true"><svg class="i"><use href="#i-mic" /></svg><span>Mic</span></button>
+            <button class="ctl" id="camBtn" type="button" aria-pressed="true"><svg class="i"><use href="#i-cam" /></svg><span>Camera</span></button>
+            <button class="ctl wide-only" id="ccBtn" type="button" aria-pressed="true"><svg class="i"><use href="#i-cc" /></svg><span>Captions</span></button>
+            <button class="ctl" id="handBtn" type="button" aria-pressed="false"><svg class="i"><use href="#i-hand" /></svg><span>Hand</span></button>
+          </div>
+          <div class="bar-group">
+            <button class="ctl" id="pauseBtn" type="button" aria-pressed="false"><svg class="i"><use href="#i-pause" /></svg><span>Pause</span></button>
+            <button class="ctl" id="addSign" type="button"><svg class="i"><use href="#i-plus" /></svg><span>Add a sign</span></button>
+            <button class="ctl wide-only" id="voiceBtn" type="button"><svg class="i"><use href="#i-speaker" /></svg><span>Voice</span></button>
+          </div>
+          <div class="bar-group">
+            <button class="ctl" id="moreBtn" type="button" aria-haspopup="menu" aria-expanded="false"><svg class="i"><use href="#i-more" /></svg><span>More</span></button>
+          </div>
+          <button class="leave" id="leaveBtn" type="button" aria-label="Leave the meeting"><svg class="i"><use href="#i-leave" /></svg></button>
+          <div class="bar-right wide-only">
+            <button class="ctl" id="peopleBtn" type="button" aria-pressed="false"><svg class="i"><use href="#i-people" /></svg><span>People <b id="peopleCount"></b></span></button>
+            <button class="ctl" id="transcriptBtn" type="button" aria-pressed="false"><svg class="i"><use href="#i-chat" /></svg><span>Transcript</span></button>
+          </div>
+          <div class="menu" id="menu" role="menu" hidden>
+            <button role="menuitem" type="button" id="mSigns"><svg class="i"><use href="#i-signs" /></svg>My signs</button>
+            <button role="menuitem" type="button" id="mPers"><svg class="i"><use href="#i-user" /></svg>Voice and avatar</button>
+            <button role="menuitem" type="button" id="mTour"><svg class="i"><use href="#i-refresh" /></svg>Show me around</button>
+            <button class="narrow-only" role="menuitem" type="button" id="mPeople"><svg class="i"><use href="#i-people" /></svg>People</button>
+            <button class="narrow-only" role="menuitem" type="button" id="mTranscript"><svg class="i"><use href="#i-chat" /></svg>Transcript</button>
+            <button class="narrow-only" role="menuitem" type="button" id="mCc"><svg class="i"><use href="#i-cc" /></svg>Captions on or off</button>
+          </div>
+        </nav>
+      </section>
+
+      <div class="toast" id="toast" role="alert" hidden></div>
+
+      <aside class="demo" id="demo" hidden aria-label="Presenter controls">
+        <div class="demo-head">
+          <strong>Presenter controls</strong>
+          <button class="round small" id="demoClose" type="button" aria-label="Close"><svg class="i"><use href="#i-x" /></svg></button>
+        </div>
+        <p>Only you see this. It stands in for the service while there's no backend. Press D to show or hide.</p>
+        <section class="demo-box">
+          <h3>The 90-second demo</h3>
+          <div class="demo-row">
+            <button class="pill-btn strong" id="demoPlay" type="button">Play demo</button>
+            <button class="pill-btn" id="demoStop" type="button">Stop</button>
+            <div class="seg" id="demoSpeed" role="radiogroup" aria-label="Demo speed"></div>
+          </div>
+        </section>
+        <section class="demo-box">
+          <h3>Sam speaks</h3>
+          <div class="demo-grid" id="demoTeacher"></div>
+        </section>
+        <section class="demo-box">
+          <h3>Alice signs</h3>
+          <div class="demo-row" id="demoAlice"></div>
+        </section>
+        <section class="demo-box">
+          <h3>Screen</h3>
+          <div class="demo-row">
+            <div class="seg" id="demoScreen" role="radiogroup" aria-label="Screen size"></div>
+            <a class="pill-btn" href="?split=1">One-laptop mode</a>
+            <button class="pill-btn" id="demoReset" type="button">Reset everything</button>
+          </div>
+        </section>
+        <section class="demo-box">
+          <h3>Auto-pause</h3>
+          <div class="seg" id="demoAuto" role="radiogroup" aria-label="Auto-pause after"></div>
+        </section>
+      </aside>
+
+      <div class="scrim" id="teachScrim" hidden>
+        <div class="teach" id="teach" role="dialog" aria-modal="true" aria-labelledby="teachTitle"></div>
+      </div>
+
+      <div class="scrim" id="persScrim" hidden>
+        <div class="pers" id="pers" role="dialog" aria-modal="true" aria-labelledby="persTitle"></div>
+      </div>
+
+      <div class="tour" id="tour" hidden>
+        <div class="ring" id="tourRing"></div>
+        <div class="tip" id="tourTip" role="dialog" aria-live="polite"></div>
+      </div>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
