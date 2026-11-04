@@ -132,6 +132,7 @@ function onMessage(m) {
   if (m.type === "room") showPeople(m.participants || []);
   else if (m.type === "caption") addCaption(m.speaker, m.text);
   else if (m.type === "speak") speak(m.text);
+  else if (m.type === "speech_audio") playSpeechAudio(m);
 }
 
 // People: signer first, then participants
@@ -164,11 +165,26 @@ function addCaption(speaker, text) {
   if (atBottom) box.scrollTop = box.scrollHeight;
 }
 
-// Voice out: the signer's sentences
+// Voice out: the signer's sentences. ElevenLabs audio (speech_audio) when the service sends it
+// within 2.5 s, otherwise the browser's own voice; never both for the same sentence.
+const pendingSpeak = new Map();   // text -> fallback timer
 function speak(text) {
-  // TODO(phase2): ElevenLabs voice (the signer's chosen voice) instead of the browser's default
-  if (!text || !$("speakOn").checked || !window.speechSynthesis) return;
-  speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+  if (!text || !$("speakOn").checked) return;
+  clearTimeout(pendingSpeak.get(text));
+  pendingSpeak.set(text, setTimeout(() => {
+    pendingSpeak.delete(text);
+    if (window.speechSynthesis) speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+  }, 2500));
+}
+function playSpeechAudio(m) {
+  if (!$("speakOn").checked) return;
+  if (!pendingSpeak.has(m.text)) return;   // already spoken by the browser, or speak never arrived
+  clearTimeout(pendingSpeak.get(m.text));
+  pendingSpeak.delete(m.text);
+  const mime = m.format === "mp3" ? "audio/mpeg" : "audio/" + (m.format || "mpeg");
+  new Audio("data:" + mime + ";base64," + m.audio).play().catch(() => {
+    if (window.speechSynthesis) speechSynthesis.speak(new SpeechSynthesisUtterance(m.text));
+  });
 }
 
 // Voice in: browser speech recognition, one utterance per tap

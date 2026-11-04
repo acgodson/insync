@@ -76,6 +76,8 @@ class Room:
             # TODO(phase2): Claude ordering before speaking, ElevenLabs voice server-side
         elif m["type"] == "caption":   # phone mic or a participant's words, captioned for everyone
             await self.to_participants(m)
+        elif m["type"] == "speech_audio":   # ElevenLabs voice for the signer's sentence: participants play it
+            await self.to_participants(m)
 
     # --- Joining and leaving ---
 

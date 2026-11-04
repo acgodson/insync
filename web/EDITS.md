@@ -953,3 +953,459 @@ New:
   "Room SMKE · 1 participant", Bob's caption is labelled "Bob", the menu header reads "You". Tapping the room line
   builds `http://localhost:8000/join/SMKE` (headless has no clipboard, so it fell back to the "Couldn't copy. Link: ..." toast).
 - Remaining "Alice"/"Teacher" text is in the mock-only demo drawer and the mock's explain() log, left as is.
+
+## M: live browser mode (the page is the signer in any browser with a webcam)
+
+Applied after L. Each edit is a literal find/replace that matched exactly once; offsets are character offsets of the old snippet in the file as it stood when that edit was applied (find by snippet). All in the app script.
+
+Mode selection (`createSocket()` / `socket.onmode`):
+1. `window.insync.native` -> **bridge**, unchanged (frames, socket and room come from the app; old intro if not onboarded).
+2. `?mock=1` -> **mock**, the old demo and intro, unchanged.
+3. Otherwise -> **live browser** (`socket.mode === "ws"`, `liveBrowser()`), the default, also at `/` and `/app` on our backend.
+   The "Start your room" card (name kept in `almero.name`, sign language NSL/ASL/BSL kept in `almero.lang` and sent as nsl/ase/bfi,
+   "Read my signs aloud" on by default, kept in `almero.readAloud`) replaces the intro. Start: room code from `?room=` or
+   `POST ${location.origin}/rooms`, then `ws(s)://${location.host}/ws?room=CODE&role=signer&name=NAME` (reconnects every 2 s; `?service=` still overrides the URL).
+   The code is written into the address bar (`?room=CODE`) so a reload rejoins the same room. On every open: `ui_ready {view: "phone"}`,
+   `settings {language, voice}`, `session {state}`. Webcam (`getUserMedia`, user-facing, ideal 640x480) -> `frame {jpeg, w, h, ts}` at 10 fps
+   while live and connected (frames are dropped, not queued, when the socket has more than 512 KB buffered); pause stops the track.
+   The Your hands panel shows the mirrored webcam with the `landmarks` skeleton; landmarks are mapped back to the image with the
+   service's own anchors (`NOSE_ANCHOR = (0.5, -0.15)`, `FACE_WIDTH = 0.30` from backend/config.py), so the overlay lines up with the hands.
+   Camera denied or missing: a one-line note in the panel plus a toast; captions, voice, mic and typing keep working.
+   Top bar: `Live · N participants · Room CODE` (`Paused · ...` when paused, `Connecting…` / `Reconnecting… · Room CODE` without a socket).
+   Talk view: a room card (code, link, big Copy link -> `${location.origin}/join/CODE`). Mic button: browser SpeechRecognition ->
+   `speech_text`, labelled "Someone next to me speaks". The glasses-mic chip is hidden. The tour only runs from the menu.
+   Teaching goes through the service like the bridge (K edits): the takes come from the frames being streamed; the studio shows the
+   webcam with the service's landmarks, a 3-2-1 countdown, then "Sign now… hands down to finish" until `teach_progress`.
+
+### M1: Live browser mode block: room line with connection state, room card with a big Copy link, camera note in the Your hands panel, webcam start/stop, landmark-to-image mapping, mirrored webcam + skeleton in the panel, 10 fps frame sender, the Start your room card, startRoom(), liveSetup()
+
+Offset 4794902. Inserted after:
+```js
+  $("roomInfo").addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); copyJoinLink(); } });
+```
+New code (appended right after it):
+```js
+  // ---------- live browser mode (M): no app bridge and no ?mock=1, so this page is the signer.
+  // Start card -> room code from ?room= or POST /rooms -> WebSocket; webcam frames at 10 fps while live.
+  function liveBrowser() { return !!socket && socket.mode === "ws"; }
+  var LANG_NAMES = { nsl: "Nigerian Sign Language", asl: "American Sign Language", bsl: "British Sign Language" };
+  var net = { state: "idle", np: 0 };   // idle | connecting | live | reconnecting
+  function renderRoomLine() {
+    if (!liveBrowser()) return;
+    var ri = $("roomInfo"), code = roomCode ? "Room " + roomCode : "";
+    var head = net.state === "live" ? (live ? "Live" : "Paused") + " · " + net.np + (net.np === 1 ? " participant" : " participants")
+      : net.state === "reconnecting" ? "Reconnecting…" : net.state === "connecting" ? "Connecting…" : "";
+    ri.textContent = [head, code].filter(Boolean).join(" · "); ri.hidden = !ri.textContent;
+    ri.style.color = net.state === "live" ? "" : "var(--alice)";
+    roomCard.style.display = roomCode ? "flex" : "none";
+    $("roomCode").textContent = roomCode; $("roomLink").textContent = roomCode ? joinLink().replace(/^https?:\/\//, "") : "";
+  }
+  // room code + big Copy link, top-left of the Talk view
+  var roomCard = el("div"); roomCard.id = "roomCard"; roomCard.style.cssText = "position:absolute;left:16px;top:68px;z-index:8;display:none;align-items:center;gap:14px;padding:10px 10px 10px 16px;border-radius:14px;background:#1c1d20;border:1px solid var(--line2);box-shadow:0 8px 24px rgba(0,0,0,.35);max-width:calc(100% - 140px)";
+  roomCard.innerHTML = '<div style="min-width:0"><div style="font-size:12px;color:var(--muted)">Your room</div><div id="roomCode" style="font-family:var(--f-mono);font-size:24px;letter-spacing:.08em;line-height:1.15"></div><div id="roomLink" style="font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div></div>';
+  var copyBig = el("button", "act", "Copy link"); copyBig.type = "button"; copyBig.id = "copyLinkBtn";
+  copyBig.style.cssText = "height:48px;min-width:112px;margin:0;align-self:center;font-size:16px;border-radius:12px";
+  copyBig.addEventListener("click", copyJoinLink); roomCard.appendChild(copyBig); $("conv").appendChild(roomCard);
+  // one-line camera message inside the "Your hands" panel
+  var pipMsg = el("div"); pipMsg.id = "pipMsg"; pipMsg.style.cssText = "position:absolute;left:8px;right:8px;top:50%;transform:translateY(-50%);text-align:center;font-size:12px;line-height:1.3;color:var(--text2);display:none";
+  $("pip").appendChild(pipMsg);
+  function pipNote(t) { pipMsg.textContent = t || ""; pipMsg.style.display = t ? "block" : "none"; }
+
+  // webcam (separate from the teach studio's own camera, which stays off outside the mock)
+  var cam = { stream: null, state: "off", want: false, sent: 0, video: el("video"), grab: document.createElement("canvas") };
+  cam.video.muted = true; cam.video.playsInline = true; cam.video.setAttribute("playsinline", ""); cam.video.setAttribute("muted", "");
+  function camReady() { return !!cam.stream && cam.video.readyState >= 2 && cam.video.videoWidth > 0; }
+  function camStart() {
+    cam.want = true;
+    if (cam.stream || cam.state === "starting") return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { cam.state = "none"; pipNote("No camera in this browser. Captions still work."); return; }
+    cam.state = "starting"; pipNote("Starting camera…");
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } }, audio: false }).then(function (st) {
+      if (!cam.want) { st.getTracks().forEach(function (t) { t.stop(); }); cam.state = "off"; pipNote(""); return; }
+      cam.stream = st; cam.state = "on"; cam.video.srcObject = st; cam.video.play().catch(function () {}); pipNote("");
+      if (studioOpen() && stage.src === "sim") attachStageCam();
+    }).catch(function (e) {
+      cam.state = "blocked";
+      pipNote(e && e.name === "NotFoundError" ? "No camera found. Captions still work." : "Camera blocked. Allow it in the browser to sign.");
+      toast("InSync can't use the camera, so it can't see your signs. Captions and voice still work.", true);
+    });
+  }
+  function camStop() {
+    cam.want = false;
+    if (cam.stream) cam.stream.getTracks().forEach(function (t) { t.stop(); });
+    cam.stream = null; cam.video.srcObject = null;
+    if (cam.state === "on" || cam.state === "starting") { cam.state = "off"; pipNote(""); }
+  }
+  // head-relative landmarks (x right, y up, 1 = face width, origin at the nose) back to image coords,
+  // using the service's own anchors (backend config.py NOSE_ANCHOR / FACE_WIDTH)
+  var NOSE = [0.5, -0.15], FACE_W = 0.30;
+  function camPoint(p, vw, vh) { return { x: NOSE[0] + p[0] * FACE_W, y: NOSE[1] - p[1] * FACE_W * vw / vh, z: (p[2] || 0) * FACE_W }; }
+  function drawPipCam(ctx, W, H) {
+    if (!camReady() || !live) return;
+    var v = cam.video, vw = v.videoWidth, vh = v.videoHeight, k = Math.max(W / vw, H / vh);
+    var R = { x: (W - vw * k) / 2, y: (H - vh * k) / 2, w: vw * k, h: vh * k };
+    ctx.save(); ctx.translate(W, 0); ctx.scale(-1, 1);   // mirrored, like a selfie
+    ctx.drawImage(v, R.x, R.y, R.w, R.h);
+    drawHands(ctx, (holo ? holo.hands : []).map(function (h) { return { pts: h.points.map(function (p) { return camPoint(p, vw, vh); }) }; }), R, Math.max(1.4, W / 140));
+    ctx.restore();
+  }
+  // the teach studio shows the same webcam (mirrored) with the service's landmarks
+  function attachStageCam() {
+    if (!liveBrowser() || !cam.stream) return;
+    stage.root.classList.add("mirror"); stage.video.srcObject = cam.stream; stage.video.play().catch(function () {});
+  }
+  // frames: 10 fps while live and connected; dropped (not queued) when the socket is backed up
+  setInterval(function () {
+    if (!liveBrowser() || !live || !camReady() || socket.readyState !== 1) return;
+    if (socket.buffered() > 512 * 1024) return;
+    var v = cam.video, k = Math.min(1, 640 / v.videoWidth), w = Math.round(v.videoWidth * k), h = Math.round(v.videoHeight * k), g = cam.grab;
+    if (g.width !== w || g.height !== h) { g.width = w; g.height = h; }
+    g.getContext("2d").drawImage(v, 0, 0, w, h);
+    var url = g.toDataURL("image/jpeg", 0.7);
+    socket.send(JSON.stringify({ type: "frame", jpeg: url.slice(url.indexOf(",") + 1), w: w, h: h, ts: Date.now() }));
+    cam.sent++;
+  }, 100);
+
+  // the one "Start your room" card (replaces the multi-step intro in live browser mode)
+  function openStart() {
+    $("onb").hidden = false; $("onbSkip").hidden = true; $("onbFoot").textContent = "";
+    var wrap = $("onbIn"); wrap.textContent = "";
+    var left = el("div"), right = el("div", "vis"); right.id = "onbAvatarSlot"; right.appendChild(el("canvas"));
+    left.appendChild(el("h1", null, "Start your room"));
+    left.appendChild(el("p", "lead", "Sign to your camera. Everyone you share the link with reads your captions and hears your voice."));
+    function lbl(text, ctl) { var l = el("label"); l.style.cssText = "display:block;margin-top:18px;font-size:14px;color:var(--text2)"; l.appendChild(el("span", null, text)); ctl.style.marginTop = "6px"; l.appendChild(ctl); left.appendChild(l); }
+    var nm = el("input", "field"); nm.id = "startName"; nm.type = "text"; nm.autocomplete = "name"; nm.maxLength = 40; nm.placeholder = "e.g. Amaka"; nm.value = store.get("almero.name") || "";
+    lbl("Your name", nm);
+    var sel = el("select", "field"); sel.id = "startLang";
+    [["nsl", "NSL · Nigerian Sign Language"], ["asl", "ASL · American Sign Language"], ["bsl", "BSL · British Sign Language"]].forEach(function (o) { var op = el("option", null, o[1]); op.value = o[0]; sel.appendChild(op); });
+    sel.value = LANG_NAMES[store.get("almero.lang")] ? store.get("almero.lang") : lang; lbl("Sign language", sel);
+    var tg = el("label"); tg.style.cssText = "display:flex;align-items:center;gap:10px;margin-top:18px;font-size:15px;cursor:pointer";
+    var cb = el("input"); cb.type = "checkbox"; cb.id = "startVoice"; cb.checked = store.get("almero.readAloud") !== "0"; cb.style.cssText = "width:20px;height:20px;margin:0;accent-color:var(--alice)";
+    tg.appendChild(cb); tg.appendChild(el("span", null, "Read my signs aloud")); left.appendChild(tg);
+    var a = el("div", "acts"), go = el("button", "act", "Start"); go.type = "button"; go.id = "startBtn"; a.appendChild(go); left.appendChild(a);
+    go.addEventListener("click", function () { startRoom(nm.value.trim(), sel.value, cb.checked); });
+    nm.addEventListener("keydown", function (e) { if (e.key === "Enter") go.click(); });
+    wrap.appendChild(left); wrap.appendChild(right);
+    setTimeout(function () { try { (nm.value ? go : nm).focus(); } catch (e) {} }, 30);
+  }
+  var started = false;
+  function startRoom(name, l, aloud) {
+    if (started) return; started = true;
+    store.set("almero.name", name); store.set("almero.lang", l); store.set("almero.readAloud", aloud ? "1" : "0"); store.set("almero.onboarded", "1");
+    lang = l; readAloud = !!aloud && canSpeak; renderVoice();
+    var mh = document.querySelector("#menu .mhead"); if (mh) { mh.firstChild.textContent = name || "You"; mh.lastChild.textContent = LANG_NAMES[l] || ""; }
+    $("onb").hidden = true; setTab("talk");
+    net.state = "connecting"; renderRoomLine();
+    if (!live) setLive(true); else camStart();
+    socket.start(name).then(function (code) { if (code) roomCode = code; renderRoomLine(); });
+  }
+  function liveSetup() {
+    $("gmic").style.display = "none";
+    var mb = $("micBtn"); mb.title = micLabel(); mb.setAttribute("aria-label", micLabel());
+    $("sayText").placeholder = "Someone next to me speaks: tap the mic or type"; $("sayText").setAttribute("aria-label", "Someone next to me speaks or types");
+    openStart();
+  }
+  function micLabel() { return liveBrowser() ? "Someone next to me speaks" : "Use this device's microphone"; }
+```
+### M2: Your hands panel: in live browser mode draw the mirrored webcam with the skeleton on top (drawPipCam) instead of the flat glasses view
+
+Offset 4739773.
+
+Old:
+```js
+    var ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+    var s = Math.min(W / 4, H / 3)
+```
+New:
+```js
+    var ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+    if (liveBrowser()) { drawPipCam(ctx, W, H); return; }
+    var s = Math.min(W / 4, H / 3)
+```
+### M3: Transport: the default is now the live WebSocket. Mock only with ?mock=1. In live mode the socket connects on start(name) (the Start button): room code from ?room=, or POST /rooms; URL /ws?room=CODE&role=signer&name=NAME (or ?service=... as is); the code is put in the address bar so a reload rejoins; POST failures retry every 2 s
+
+Offset 4825389.
+
+Old:
+```js
+        if (inner && inner.readyState === 1) inner.send(str); else queue.push(str);
+      },
+```
+New:
+```js
+        if (inner && inner.readyState === 1) inner.send(str); else queue.push(str);
+      },
+      start: function (name) { return startLive(name); },
+      buffered: function () { return (inner && inner.bufferedAmount) || 0; },
+```
+### M4: Transport: startLive(name) (see M3)
+
+Offset 4826718.
+
+Old:
+```js
+    function incoming(e) { if (sock.onmessage) sock.onmessage(e); }
+```
+New:
+```js
+    function incoming(e) { if (sock.onmessage) sock.onmessage(e); }
+    function startLive(name) {
+      var nm = encodeURIComponent(name || "");
+      if (svc) { wsUrl = svc + (/[?&]name=/.test(svc) ? "" : (svc.indexOf("?") < 0 ? "?" : "&") + "name=" + nm); connectWs(); return Promise.resolve((q.get("room") || "").toUpperCase()); }
+      function go(code) {
+        wsUrl = (location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws?room=" + encodeURIComponent(code) + "&role=signer&name=" + nm;
+        try { var u = new URL(location.href); if (u.searchParams.get("room") !== code) { u.searchParams.set("room", code); history.replaceState(null, "", u.toString()); } } catch (e) {}
+        connectWs(); return code;
+      }
+      var code = (q.get("room") || "").trim().toUpperCase();
+      if (code) return Promise.resolve(go(code));
+      return new Promise(function (resolve) {
+        (function create() {
+          fetch(location.origin + "/rooms", { method: "POST" })
+            .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+            .then(function (j) { if (!j || !j.code) throw new Error("no code"); resolve(go(String(j.code))); })
+            .catch(function () { if (sock.onclose) sock.onclose(); if (!closed) setTimeout(create, 2000); });
+        })();
+      });
+    }
+```
+### M5: Transport: ws mode waits for start() instead of connecting at once
+
+Offset 4828700.
+
+Old:
+```js
+      } else if (mode === "ws") connectWs();
+```
+New:
+```js
+      } else if (mode === "ws") { /* live browser mode: connects on sock.start(name), from the Start card */ }
+```
+### M6: Transport: mock only with ?mock=1; otherwise (no bridge) live browser mode
+
+Offset 4829428.
+
+Old:
+```js
+decide(wantWs ? "ws" : "mock"); }, 500);
+```
+New:
+```js
+decide(q.get("mock") === "1" ? "mock" : "ws"); }, 500);
+```
+### M7: ui_ready view is 'phone' whenever this is the signer (bridge or live browser); live browser mode also sends session {state} on every (re)connect and shows 'Live' in the room line; onclose shows 'Reconnecting…'
+
+Offset 4829544.
+
+Old:
+```js
+socket.onopen = function () { sendUi({ type: "ui_ready", view: insyncBridge() ? "phone" : "projector" }); sendSettings(); };
+```
+New:
+```js
+socket.onopen = function () {
+    sendUi({ type: "ui_ready", view: socket.isMock() ? "projector" : "phone" }); sendSettings();
+    if (liveBrowser()) { sendUi({ type: "session", state: live ? "live" : "paused" }); net.state = "live"; renderRoomLine(); }
+  };
+  socket.onclose = function () { if (liveBrowser() && started) { net.state = "reconnecting"; renderRoomLine(); } };
+```
+### M8: Onboarding: the old intro auto-opens only in mock and bridge mode (decided in onmode); live browser mode opens the Start card instead
+
+Offset 4829919.
+
+Old:
+```js
+  socket.onmode = function (mode) {
+    if (mode === "mock") return;
+```
+New:
+```js
+  socket.onmode = function (mode) {
+    if (mode !== "ws" && !store.get("almero.onboarded")) openOnb(0);
+    if (mode === "ws") liveSetup();
+    if (mode === "mock") return;
+```
+### M9: Onboarding no longer opens before the mode is known (moved into onmode, M8)
+
+Offset 4836018.
+
+Old:
+```js
+  resetUI();
+  if (!store.get("almero.onboarded")) openOnb(0);
+```
+New:
+```js
+  resetUI();   // the intro (mock / bridge) or the Start card (live browser) opens from socket.onmode
+```
+### M10: Room message: keep the participant count for the live room line
+
+Offset 4805378.
+
+Old:
+```js
+        ri.textContent = "Room " + m.code + " · " + np + (np === 1 ? " participant" : " participants"); ri.hidden = false;
+```
+New:
+```js
+        ri.textContent = "Room " + m.code + " · " + np + (np === 1 ? " participant" : " participants"); ri.hidden = false;
+        net.np = np; renderRoomLine();
+```
+### M11: Pause / resume in live browser mode releases / reacquires the webcam (frames stop with it); pause text names the camera, not the glasses
+
+Offset 4754175.
+
+Old:
+```js
+    var nbs = insyncBridge(); if (nbs) try { nbs.setSession(on ? "live" : "paused"); } catch (e) {}
+```
+New:
+```js
+    var nbs = insyncBridge(); if (nbs) try { nbs.setSession(on ? "live" : "paused"); } catch (e) {}
+    if (liveBrowser() && started) { if (on) camStart(); else camStop(); }
+```
+### M12: Pause card text in live browser mode
+
+Offset 4754549.
+
+Old:
+```js
+        : "Glasses camera and mics are off to save battery. Typing still works";
+```
+New:
+```js
+        : liveBrowser() ? "Your camera is off, so nothing is sent. Typing still works" : "Glasses camera and mics are off to save battery. Typing still works";
+```
+### M13: renderSession() refreshes the live room line (Live / Paused) and names the camera on the pause button
+
+Offset 4753648.
+
+Old:
+```js
+    var g = $("gmic"); g.classList.toggle("off", !live); $("gmicLbl").textContent = live ? "Glasses mic" : "Mic off";
+```
+New:
+```js
+    var g = $("gmic"); g.classList.toggle("off", !live); $("gmicLbl").textContent = live ? "Glasses mic" : "Mic off";
+    if (liveBrowser()) { b.title = live ? "Pause your camera" : "Resume your camera"; b.setAttribute("aria-label", b.title); renderRoomLine(); }
+```
+### M14: Mic button label in live browser mode: 'Someone next to me speaks'
+
+Offset 4755852.
+
+Old:
+```js
+b.setAttribute("aria-label", on ? "Stop listening" : "Use this device's microphone");
+```
+New:
+```js
+b.setAttribute("aria-label", on ? "Stop listening" : micLabel());
+```
+### M15: Teach studio in live browser mode: show the webcam (mirrored) after the stage switches to service mode
+
+Offset 4766417.
+
+Old:
+```js
+  function useSim() { stopCamera(); stage.src = "sim"; stage.root.classList.remove("mirror"); stage.video.removeAttribute("src"); stage.video.load(); stageStatus(); }
+```
+New:
+```js
+  function useSim() { stopCamera(); stage.src = "sim"; stage.root.classList.remove("mirror"); stage.video.removeAttribute("src"); stage.video.load(); attachStageCam(); stageStatus(); }
+```
+### M16: Teach studio stage label in live browser mode
+
+Offset 4766687.
+
+Old:
+```js
+t = socket.isMock() ? "Glasses simulation" : "Live from the app's camera"; cls = "ok"; }
+```
+New:
+```js
+t = socket.isMock() ? "Glasses simulation" : liveBrowser() ? (cam.stream ? "Live from your camera" : "Camera not available") : "Live from the app's camera"; cls = liveBrowser() && !cam.stream ? "bad" : "ok"; }
+```
+### M17: Teach studio: the service's landmarks are drawn over the webcam with the image mapping (live browser mode)
+
+Offset 4767827.
+
+Old:
+```js
+    if (!holo || !holo.hands) return [];
+```
+New:
+```js
+    if (!holo || !holo.hands) return [];
+    if (liveBrowser() && stage.video.videoWidth) { var vw = stage.video.videoWidth, vh = stage.video.videoHeight; return holo.hands.map(function (h) { return { pts: h.points.map(function (p) { return camPoint(p, vw, vh); }), sim: true }; }); }
+```
+### M18: Teach studio: the stage keeps the webcam's aspect ratio (live browser mode)
+
+Offset 4768979.
+
+Old:
+```js
+    if (stage.src === "sim") { vw = 4; vh = 3; }
+```
+New:
+```js
+    if (stage.src === "sim" && !(liveBrowser() && v.videoWidth)) { vw = 4; vh = 3; }
+```
+### M19: Teach studio: no drawn head outline over the real webcam
+
+Offset 4770194.
+
+Old:
+```js
+    if (stage.src === "sim") {
+      // the wearer
+```
+New:
+```js
+    if (stage.src === "sim" && !(liveBrowser() && stage.video.videoWidth)) {
+      // the wearer
+```
+### M20: Take guidance off the mock: after the 3-2-1 countdown the stage badge reads 'Sign now… hands down to finish'
+
+Offset 4776557.
+
+Old:
+```js
+rec.purpose = purpose; teach.sub = "recording"; stage.rec.hidden = false;
+```
+New:
+```js
+rec.purpose = purpose; teach.sub = "recording"; stage.rec.textContent = socket.isMock() ? "Recording" : "Sign now… hands down to finish"; stage.rec.hidden = false;
+```
+### M21: Take guidance off the mock in the dialog text
+
+Offset 4787442.
+
+Old:
+```js
+p(busy ? (teach.sub === "countdown" ? "Get ready…" : "Recording. Sign it at a normal pace.")
+```
+New:
+```js
+p(busy ? (teach.sub === "countdown" ? "Get ready…" : socket.isMock() ? "Recording. Sign it at a normal pace." : "Sign now… hands down to finish")
+```
+
+### M verification
+
+- `html.parser` parses the file; all 6 inline scripts pass `node --check`.
+- Headless Chrome 156 (`--use-fake-device-for-media-stream --use-fake-ui-for-media-stream`) against the local service (`CONFIDENCE_THRESHOLD=0`):
+  - **Live, `/`**: the Start card shows (name, NSL/ASL/BSL, Read my signs aloud checked). Start -> `POST /rooms`, `/ws?room=ZVXW&role=signer&name=Amaka`,
+    the address bar becomes `/?room=ZVXW`, `GET /rooms/ZVXW` lists Amaka as signer, the server logs `ui_ready view=phone`, `settings language=ase`,
+    `session live` and `frames received: 1 / 100 / 200 (640x480)`. Room line `Live · 0 participants · Room ZVXW`, room card with
+    `localhost:8000/join/ZVXW` and Copy link. `tests/replay.py --participant Bob --room ZVXW --speech "hello can you help me"` -> caption "Bob: hello can you help me".
+    Pause -> `Paused · ...`, resume -> `Live · ...`. Typed text -> `speech_text` -> caption "Phone mic: ...". No intro and no tour.
+  - **Live with a real signing video as the fake camera** (`--use-file-for-fake-video-capture`, the wave clip): the Your hands panel shows the mirrored
+    video with the skeleton on the hand; the service recognises WAVE and the `sentence` is spoken with `speechSynthesis` (read aloud on).
+    Add a sign "wavetest": 3-2-1, "Sign now… hands down to finish", `teach_start` -> `teach_progress` -> "Take 1 of 2 recorded", then
+    "Take 2 of 2 recorded" / "WAVETEST is recorded" with Save. Cancelled (not saved) so the library under tools/ is untouched.
+  - **Reconnect**: stopping the service shows `Reconnecting… · Room SWCU`; after restarting it the page rejoins SWCU as the signer and frames resume.
+  - **Camera denied** (getUserMedia rejected with NotAllowedError): one-line note "Camera blocked. Allow it in the browser to sign." in the
+    panel and a toast; the room is still created and joined.
+  - **`?mock=1`**: the old intro opens on first run, typed text gives the mock caption, D opens the demo drawer, Play demo runs; no fetch, no getUserMedia.
+  - **Bridge** (fake `window.insync` before the scripts): sends `ui_ready view=phone` and `settings`; no `POST /rooms`, no getUserMedia, no frames;
+    old intro on first run; `room` -> "Room ABCD · 1 participant"; captions "Bob" / "You"; mic -> `insync.listen`, `speechResult` -> `speech_text`;
+    pause -> `session paused` + `insync.setSession('paused')`.
