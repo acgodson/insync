@@ -1,0 +1,24 @@
+{
+  "name": "insync-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host",
+    "postinstall": "node scripts/copy-mediapipe.mjs"
+  },
+  "dependencies": {
+    "@fontsource/atkinson-hyperlegible-mono": "5.3.0",
+    "@fontsource/atkinson-hyperlegible-next": "5.3.0",
+    "@mediapipe/tasks-vision": "0.10.14",
+    "@pixiv/three-vrm": "3.1.0",
+    "three": "0.169.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.169.0",
+    "typescript": "5.9.3",
+    "vite": "6.4.5"
+  }
+}
