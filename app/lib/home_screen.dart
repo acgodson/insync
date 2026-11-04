@@ -56,6 +56,7 @@ window.dispatchEvent(new Event('insync-ready'));
   String _roomCode = '';
   String _roomLink = '';
   int _participants = 0;
+  String? _lastRoomJson;   // replayed to the page once it has attached its handlers
   Uint8List? _preview;
   bool _previewLarge = false;
   bool _mirror = false;
@@ -85,6 +86,12 @@ window.dispatchEvent(new Event('insync-ready'));
         onPageFinished: (_) async {
           await _web?.runJavaScript(_bridge);
           _sendVoices();
+          // The page attaches window.insync.onMessage shortly after 'insync-ready'; the room
+          // message usually arrived earlier, so hand it over again now.
+          Future.delayed(const Duration(milliseconds: 600), () {
+            final r = _lastRoomJson;
+            if (r != null) _web?.runJavaScript('window.insync && window.insync.onMessage && window.insync.onMessage(${jsonEncode(r)})');
+          });
         },
         onWebResourceError: (e) {
           // Hosted UI unreachable: fall back to the bundled copy
@@ -193,6 +200,7 @@ window.dispatchEvent(new Event('insync-ready'));
       final m = jsonDecode(json) as Map;
       _lastType = m['type']?.toString() ?? '';
       if (_lastType == 'room') {
+        _lastRoomJson = json;
         _roomCode = m['code']?.toString() ?? _roomCode;
         _participants = ((m['participants'] as List?)?.where((p) => p['role'] == 'participant').length) ?? 0;
       }
