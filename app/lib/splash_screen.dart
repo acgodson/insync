@@ -28,6 +28,8 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Image(image: AssetImage('assets/brand/insync-mark.png'), width: 120, height: 120),
+            SizedBox(height: 12),
             Text('InSync', style: TextStyle(fontSize: 40, fontWeight: FontWeight.w600, color: Colors.white)),
             SizedBox(height: 8),
             Text('Connecting everyone.', style: TextStyle(fontSize: 16, color: Colors.white70)),

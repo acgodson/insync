@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+"""Apply the InSync brand (lockup, mark, favicon, theme-color) to the built signer UI.
+
+    python3 web/brand/apply_brand.py [path/to/index.html]      (default: web/dist/index.html)
+    python3 web/brand/apply_brand.py --dry-run [path]           (check anchors, write nothing)
+
+What it changes (all-or-nothing; nothing is written if any check fails):
+  1. landing header  <div class="brand"><svg class="mark"><use href="#i-mark" /></svg><span>InSync</span></div>
+                     -> <div class="brand" data-insync-brand="landing"><svg ...lockup (mark + "insync"), 22 px high...></div>
+  2. room top bar    <svg class="mark" aria-label="InSync"><use href="#i-mark" /></svg>
+                     -> <svg data-insync-brand="room" ...hand mark only, 22 px...>
+  3. <link rel="icon"> set (inserted after <title>…</title>) or replaced, with the favicon as a data URI
+  4. <meta name="theme-color"> set to #111111 (replaced, or inserted after <title> if missing)
+
+Idempotent: an edit whose marker (data-insync-brand="…" / data-insync-favicon) is already present
+exactly once, with its anchor gone, is reported as "already applied" and skipped.
+Refuses (exit 2) if an anchor occurs more than once, or neither the anchor nor the applied marker is
+found; it prints which. It also rewrites apply_brand.targets.txt next to this script with every
+"InSync" occurrence in the page and whether this script touches it, for a human to check.
+The SVGs are read from this folder (insync-lockup-outlined.svg, insync-mark.svg, favicon.svg), so
+regenerate them with build_brand.py first if the geometry changes.
+"""
+import re, sys, urllib.parse
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+DEFAULT = HERE.parent / "dist" / "index.html"
+TARGETS = HERE / "apply_brand.targets.txt"
+THEME = "#111111"
+
+
+def inline_svg(name, marker, height):
+    s = (HERE / name).read_text().strip()
+    s = re.sub(r"<title>.*?</title>", "", s)
+    return s.replace("<svg ", f'<svg {marker} style="height:{height}px;width:auto;display:block;flex:none" ', 1)
+
+
+def favicon_uri():
+    s = re.sub(r"<title>.*?</title>", "", (HERE / "favicon.svg").read_text().strip()).replace('"', "'")
+    return "data:image/svg+xml," + urllib.parse.quote(s, safe=" =:/;,'()-.")
+
+
+def literal_edits():
+    lockup = inline_svg("insync-lockup-outlined.svg", 'data-insync-brand="lockup"', 22)
+    mark = inline_svg("insync-mark.svg", 'data-insync-brand="room" class="insync-mark"', 22)
+    return [
+        ("landing header lockup",
+         '<div class="brand"><svg class="mark"><use href="#i-mark" /></svg><span>InSync</span></div>',
+         f'<div class="brand" data-insync-brand="landing">{lockup}</div>',
+         'data-insync-brand="landing"'),
+        ("room top-bar mark",
+         '<svg class="mark" aria-label="InSync"><use href="#i-mark" /></svg>',
+         mark,
+         'data-insync-brand="room"'),
+    ]
+
+
+ICON_RE = re.compile(r"<link\b[^>]*\brel=[\"']?(?:shortcut )?icon[\"']?[^>]*>", re.I)
+THEME_RE = re.compile(r"<meta\b[^>]*\bname=[\"']theme-color[\"'][^>]*>", re.I)
+TITLE_RE = re.compile(r"<title>[^<]*</title>", re.I)
+
+
+def plan(html):
+    """Return (new_html, report_lines, errors)."""
+    report, errors = [], []
+    for label, anchor, repl, marker in literal_edits():
+        n, m = html.count(anchor), html.count(marker)
+        if n == 1 and m == 0:
+            html = html.replace(anchor, repl)
+            report.append(f"APPLY   {label}")
+        elif n == 0 and m == 1:
+            report.append(f"SKIP    {label}: already applied")
+        else:
+            errors.append(f"{label}: anchor found {n}x, applied marker found {m}x "
+                          f"(need anchor 1x, or 0x with marker 1x)\n    anchor: {anchor}")
+
+    titles = TITLE_RE.findall(html)
+    icon_tag = f'<link rel="icon" type="image/svg+xml" data-insync-favicon href="{favicon_uri()}" />'
+    theme_tag = f'<meta name="theme-color" content="{THEME}" />'
+    for label, rx, tag in (("favicon <link rel=icon>", ICON_RE, icon_tag),
+                           ("<meta name=theme-color>", THEME_RE, theme_tag)):
+        found = rx.findall(html)
+        if len(found) > 1:
+            errors.append(f"{label}: found {len(found)}x, expected at most 1")
+        elif len(found) == 1:
+            if found[0] == tag:
+                report.append(f"SKIP    {label}: already set")
+            else:
+                html = html.replace(found[0], tag, 1)
+                report.append(f"APPLY   {label}: replaced {found[0][:80]}")
+        elif len(titles) == 1:
+            html = html.replace(titles[0], titles[0] + "\n    " + tag, 1)
+            report.append(f"APPLY   {label}: inserted after {titles[0]}")
+        else:
+            errors.append(f"{label}: missing, and <title> found {len(titles)}x so there is no insert point")
+    return html, report, errors
+
+
+def write_targets(html, path):
+    lines = [f"InSync occurrences in {path} (generated by apply_brand.py)", ""]
+    anchors = [a for _, a, _, _ in literal_edits()]
+    spans = []
+    for a in anchors:
+        i = html.find(a)
+        while i != -1:
+            spans.append((i, i + len(a))); i = html.find(a, i + 1)
+    for m in re.finditer(r"InSync", html):
+        i = m.start()
+        hit = any(a <= i < b for a, b in spans)
+        ctx = html[max(0, i - 110): i + 70].replace("\n", " ")
+        if hit:
+            tag = "CHANGE  visible brand (anchor)"
+        elif html.rfind("<script", 0, i) > html.rfind("</script>", 0, i):
+            tag = "keep    inside <script> (UI copy / document.title)"
+        elif TITLE_RE.match(html, html.rfind("<title>", 0, i) if html.rfind("<title>", 0, i) >= 0 else 0) and i - html.rfind("<title>", 0, i) < 20:
+            tag = "keep    <title>"
+        else:
+            tag = "keep    body copy / aria-label"
+        lines.append(f"@{i:>9}  {tag}\n           …{ctx}…")
+    lines += ["", "Anchors:"] + [f"  {a}" for a in anchors] + [
+        "  <link rel=icon> (regex, insert after <title> if absent)",
+        "  <meta name=theme-color> (regex, replace)"]
+    TARGETS.write_text("\n".join(lines) + "\n")
+
+
+def main(argv):
+    dry = "--dry-run" in argv
+    args = [a for a in argv if a != "--dry-run"]
+    path = Path(args[0]) if args else DEFAULT
+    html = path.read_text(encoding="utf-8")
+    write_targets(html, path)
+    new, report, errors = plan(html)
+    print("\n".join(report))
+    if errors:
+        print("\nREFUSING to modify", path, file=sys.stderr)
+        for e in errors:
+            print("  -", e, file=sys.stderr)
+        return 2
+    if new == html:
+        print("nothing to do:", path)
+    elif dry:
+        print("dry run, not written:", path)
+    else:
+        path.write_text(new, encoding="utf-8")
+        print("written:", path, f"({len(new) - len(html):+d} bytes)")
+    print("targets listed in", TARGETS)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

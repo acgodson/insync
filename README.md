@@ -1,3 +1,6 @@
+![InSync](web/brand/insync-lockup.svg#gh-dark-mode-only)
+![InSync](web/brand/insync-lockup-light.svg#gh-light-mode-only)
+
 # InSync
 
 AI accessibility meeting rooms: one Deaf signer on the phone app, hearing participants in any

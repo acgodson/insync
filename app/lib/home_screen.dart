@@ -335,7 +335,7 @@ window.dispatchEvent(new Event('insync-ready'));
   Widget _previewWidget() {
     final img = _preview;
     if (img == null) return const SizedBox.shrink();
-    final w = _previewLarge ? 220.0 : 90.0;
+    final w = _previewLarge ? 220.0 : 72.0;
     return GestureDetector(
       onTap: () => setState(() => _previewLarge = !_previewLarge),
       child: Container(
@@ -373,10 +373,8 @@ window.dispatchEvent(new Event('insync-ready'));
                   children: [
                     const Text('InSync', style: TextStyle(color: Colors.white70, fontSize: 12)),
                     const SizedBox(width: 10),
-                    Text(_roomCode.isEmpty ? '' : 'Room $_roomCode',
-                        style: const TextStyle(color: Color(0xFFF0B54A), fontSize: 12, fontWeight: FontWeight.w600)),
-                    if (_participants > 0)
-                      Text('  · $_participants in', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                    Text(_roomCode.isEmpty ? '' : _roomCode,
+                        style: const TextStyle(color: Color(0xFFE9B84E), fontSize: 12, fontWeight: FontWeight.w600)),
                     const Spacer(),
                     GestureDetector(
                       onTap: _pickSource,
@@ -408,7 +406,7 @@ window.dispatchEvent(new Event('insync-ready'));
                   _web == null
                       ? const Center(child: CircularProgressIndicator())
                       : WebViewWidget(controller: _web!),
-                  Positioned(top: 8, right: 8, child: _previewWidget()),
+                  Positioned(bottom: 12, right: 8, child: _previewWidget()),
                 ],
               ),
             ),
