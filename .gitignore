@@ -2,11 +2,28 @@
 # Reference material and the Meta sample repo live beside the project, never in it
 /meta-wearables-dat-android/
 /draft-web/
-# Recordings of people: frames, videos, landmark libraries
+# Recordings of people: frames, videos, landmark libraries, consent records
 /tools/data/signs/*/*.json
 /backend/data/
 /backend/uploads/
+/data/
+# Python
 /backend/.venv/
+/tools/.venv/
+.venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+# Secrets
+.env
+.env.*
+# Language module: generated or machine-specific
+backend/language/.tts_cache/
+backend/language/vocab.local.json
+*.jsonl
+# Web: the original teammate build kept only for diffing
 /web/dist/index.original.html
+# Build output (app/ has its own .gitignore for Flutter)
+node_modules/
+.vscode/
+.idea/

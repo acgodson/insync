@@ -7,6 +7,10 @@ User=ubuntu
 WorkingDirectory=/opt/insync/backend
 Environment=PYTHONUNBUFFERED=1
 Environment=CONFIDENCE_THRESHOLD=0
+Environment=ALMERO_STT=text
+Environment=ALMERO_TTS_MODE=app
+Environment=ALMERO_SETTING=An accessibility meeting room. The signer is Deaf and signs through the camera; hearing participants join from their browsers.
+EnvironmentFile=-/opt/insync/backend/.env
 ExecStart=/opt/insync/backend/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000 --proxy-headers --forwarded-allow-ips=*
 Restart=always
 RestartSec=2

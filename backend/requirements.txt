@@ -5,3 +5,7 @@ websockets
 numpy
 opencv-python
 mediapipe
+# Language & voice module (backend/language): Claude ordering + TTS engines; Whisper not needed (ALMERO_STT=text)
+anthropic>=0.75
+httpx
+edge-tts

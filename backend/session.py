@@ -1,4 +1,4 @@
-"""One connection's state: language, library, live/paused, teaching, recognition, status."""
+"""One signer's state: camera frames, segmentation, recognition, teaching, and the language module."""
 import asyncio
 import base64
 import time
@@ -6,15 +6,16 @@ import time
 import numpy as np
 
 import config
-import language
 import pipeline
+from language.config import Settings
+from language.module import LanguageModule
 from toolkit import extract, segment
 
 
 class Session:
     def __init__(self, send, signer_name="Signer"):
         self.send = send                      # async fn(dict)
-        self.signer_name = signer_name        # speaker on the signer's sentences
+        self.signer_name = signer_name
         self.language = config.DEFAULT_LANGUAGE
         self.voice = ""
         self.live = True
@@ -23,21 +24,27 @@ class Session:
         self.library = pipeline.load_library(config.LIBRARY_DIR, self.language)
         self.teach_label = None               # label being taught, or None
         self.teach_takes = []                 # feature arrays collected so far
-        self.pending_labels = []
-        self.sentence_task = None
+        self.collecting = False
         self.last_ts = 0
         self.latest = None                    # newest frame waiting for the worker
         self.frame_size = (504, 896)
         self.frame_event = asyncio.Event()
         self.frames_in = 0
         self.latencies = []
-        self.tasks = [asyncio.create_task(self.worker()), asyncio.create_task(self.status_loop())]
+        # Ephraim's language & voice module: picks signs in context, composes the sentence,
+        # glosses hearing speech into avatar signs. Speech-to-text stays on the phone / browser.
+        self.lang = LanguageModule(self.send, Settings(
+            stt_engine="text", speaker_signer=signer_name, speaker_hearing="Phone mic",
+            min_conf=config.CONFIDENCE_THRESHOLD, sign_pause_s=config.SENTENCE_GAP_MS / 1000))
+        for label in self.taught_labels:      # taught signs are usable in both directions
+            self.lang.vocab.add_sign(label)
+        self.tasks = [asyncio.create_task(self.lang.start()),
+                      asyncio.create_task(self.worker()), asyncio.create_task(self.status_loop())]
 
     def close(self):
         for t in self.tasks:
             t.cancel()
-        if self.sentence_task:
-            self.sentence_task.cancel()
+        asyncio.ensure_future(self.lang.close())
         self.landmarker.close()
 
     @property
@@ -124,31 +131,25 @@ class Session:
     # --- Recognition and teaching ---
 
     async def on_segment(self, features):
-        if self.teach_label is not None and getattr(self, "collecting", False):
+        if self.teach_label is not None and self.collecting:
             self.collecting = False
             self.teach_takes.append(features)
             await self.emit("teach_progress", label=self.teach_label, take=len(self.teach_takes), of=config.TAKES_REQUIRED)
             return
         ranked = pipeline.rank(features, self.library)
-        await self.emit("sign_candidates", items=[{"label": l, "confidence": round(c, 3)} for l, c in ranked[:3]])
-        if not ranked or ranked[0][1] < config.CONFIDENCE_THRESHOLD:
+        items = [{"label": l, "confidence": round(c, 3)} for l, c in ranked[:3]]
+        await self.emit("sign_candidates", items=items)
+        if not items:
             await self.emit("unknown_sign")
             return
-        label, conf = ranked[0]
-        await self.emit("sign_recognized", label=label, confidence=round(conf, 3))
-        self.pending_labels.append(label)
-        if self.sentence_task:
-            self.sentence_task.cancel()
-        self.sentence_task = asyncio.create_task(self.flush_sentence())
-
-    async def flush_sentence(self):
-        await asyncio.sleep(config.SENTENCE_GAP_MS / 1000)
-        text, self.pending_labels = " ".join(self.pending_labels), []
-        await self.emit("sentence", speaker=self.signer_name, text=text)
+        # The language module picks the sign in context, emits sign_recognized / unknown_sign,
+        # and composes the `sentence` after the signer pauses.
+        await self.lang.on_sign_candidates(items)
 
     async def on_teach_stop(self, label):
         if label and self.teach_label is not None and len(self.teach_takes) >= config.TAKES_REQUIRED:
             self.save_takes(label, self.teach_takes, "glasses")
+            await self.lang.on_teach_stop(label)
             await self.emit("sign_learned", label=label)
         self.teach_label, self.teach_takes, self.collecting = None, [], False
 
@@ -158,11 +159,12 @@ class Session:
         segment.append_takes(path, label, self.language, "phone", records)
         self.library = pipeline.load_library(config.LIBRARY_DIR, self.language)
 
-    # --- Speech -> avatar ---
+    # --- Speech -> avatar (hearing side) ---
 
-    async def on_speech(self, text):
-        await self.emit("caption", speaker="Phone mic", text=text)   # a hearing person next to the phone
-        await self.emit("avatar_play", **language.to_signs(text, self.taught_labels))
+    async def on_speech(self, text, speaker="Phone mic"):
+        """A hearing person's words: caption, then Claude-ordered signs for the avatar."""
+        self.lang.s.speaker_hearing = speaker
+        await self.lang.on_text(text)
 
     # --- Status ---
 

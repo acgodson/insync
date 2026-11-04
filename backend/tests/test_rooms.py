@@ -108,8 +108,8 @@ async def main():
             check("signer gets sentence from Alice", m is not None and m["speaker"] == "Alice", m)
             cap = await wait_for(par_seen, "caption", p0, timeout=3)
             spk = await wait_for(par_seen, "speak", p0, timeout=3)
-            check("participant gets caption 'wave' from Alice", cap is not None and cap["text"] == "wave" and cap["speaker"] == "Alice", cap)
-            check("participant gets speak 'wave'", spk is not None and spk["text"] == "wave", spk)
+            check("participant gets caption 'wave' from Alice", cap is not None and cap["text"].strip(" .!?").lower() == "wave" and cap["speaker"] == "Alice", cap)
+            check("participant gets speak 'wave'", spk is not None and spk["text"].strip(" .!?").lower() == "wave", spk)
         else:
             print("SKIP  sentence checks (frame folders missing)")
 

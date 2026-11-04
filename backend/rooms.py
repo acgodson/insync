@@ -3,7 +3,6 @@ import json
 import random
 import time
 
-import language
 from session import Session
 
 CODE_LETTERS = "ABCDEFGHJKMNPQRSTUVWXYZ"   # no I, L, O
@@ -75,7 +74,7 @@ class Room:
             await self.to_participants(message("caption", speaker=m["speaker"], text=m["text"]))
             await self.to_participants(message("speak", text=m["text"]))
             # TODO(phase2): Claude ordering before speaking, ElevenLabs voice server-side
-        elif m["type"] == "caption":   # signer-side phone mic
+        elif m["type"] == "caption":   # phone mic or a participant's words, captioned for everyone
             await self.to_participants(m)
 
     # --- Joining and leaving ---
@@ -91,6 +90,7 @@ class Room:
         if self.session is None:
             self.session = Session(self.on_session_emit, name)
         self.session.signer_name = name   # a replacing signer brings its own name
+        self.session.lang.s.speaker_signer = name
         await self.broadcast_room()
 
     async def join_participant(self, ws, name):
@@ -118,6 +118,8 @@ class Room:
         if not text:
             return
         name = next((p["name"] for p in self.participants if p["ws"] is ws), "Guest")
-        await self.to_all(message("caption", speaker=name, text=text))
-        labels = self.session.taught_labels if self.session else ()
-        await self.to_signer(message("avatar_play", **language.to_signs(text, labels)))
+        if self.session:
+            # The session emits caption (routed to everyone below) and avatar_play (signer only)
+            await self.session.on_speech(text, speaker=name)
+        else:
+            await self.to_participants(message("caption", speaker=name, text=text))

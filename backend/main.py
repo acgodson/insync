@@ -66,6 +66,12 @@ def get_room(code: str):
     return {"code": room.code, "participants": room.people()}
 
 
+@app.get("/")
+def root_page():
+    """The hosted signer UI is the front door: open it in any browser with a webcam."""
+    return FileResponse(Path(__file__).parent.parent / "web" / "dist" / "index.html")
+
+
 @app.get("/app")
 def signer_page():
     """Signer web UI (web/dist/index.html) for the phone's prod mode or a laptop browser (?service=...)."""
