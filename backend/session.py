@@ -12,8 +12,9 @@ from toolkit import extract, segment
 
 
 class Session:
-    def __init__(self, send):
+    def __init__(self, send, signer_name="Signer"):
         self.send = send                      # async fn(dict)
+        self.signer_name = signer_name        # speaker on the signer's sentences
         self.language = config.DEFAULT_LANGUAGE
         self.voice = ""
         self.live = True
@@ -143,7 +144,7 @@ class Session:
     async def flush_sentence(self):
         await asyncio.sleep(config.SENTENCE_GAP_MS / 1000)
         text, self.pending_labels = " ".join(self.pending_labels), []
-        await self.emit("sentence", speaker="alice", text=text)
+        await self.emit("sentence", speaker=self.signer_name, text=text)
 
     async def on_teach_stop(self, label):
         if label and self.teach_label is not None and len(self.teach_takes) >= config.TAKES_REQUIRED:
@@ -160,7 +161,7 @@ class Session:
     # --- Speech -> avatar ---
 
     async def on_speech(self, text):
-        await self.emit("caption", speaker="bob", text=text)
+        await self.emit("caption", speaker="Phone mic", text=text)   # a hearing person next to the phone
         await self.emit("avatar_play", **language.to_signs(text, self.taught_labels))
 
     # --- Status ---

@@ -72,6 +72,8 @@ class MainActivity : FlutterFragmentActivity() {
   private var initialized = false
   private var fallback = false       // true: use the Mock Device Kit (phone camera) when no glasses are found
   private var mockActive = false
+  private var wantStream = false      // true between start() and stop(): a session ended by the device is retried
+  private var retryJob: Job? = null
   private var deviceJob: Job? = null
 
   // Latency bookkeeping
@@ -138,6 +140,7 @@ class MainActivity : FlutterFragmentActivity() {
   }
 
   private fun start() {
+    wantStream = true
     val needed = if (fallback) ANDROID_PERMISSIONS + Manifest.permission.CAMERA else ANDROID_PERMISSIONS
     val missing = needed.filter { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
     if (missing.isNotEmpty()) androidPermissionLauncher.launch(missing.toTypedArray()) else connectAndStream()
@@ -211,9 +214,8 @@ class MainActivity : FlutterFragmentActivity() {
   private fun switchSource(glasses: Boolean) {
     getSharedPreferences("insync", MODE_PRIVATE).edit().putString("source", if (glasses) "glasses" else "phone").apply()
     stop()
-    val restart = Intent.makeRestartActivityTask(componentName)
-    startActivity(restart)
-    android.os.Handler(mainLooper).postDelayed({ Runtime.getRuntime().exit(0) }, 150)
+    startActivity(Intent(this, RestartActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
+    Runtime.getRuntime().exit(0)
   }
 
   private val preferredSource get() = getSharedPreferences("insync", MODE_PRIVATE).getString("source", "auto")
@@ -240,7 +242,10 @@ class MainActivity : FlutterFragmentActivity() {
             created.state.collect { state ->
               status("Session: $state")
               if (state == DeviceSessionState.STARTED && camera == null) ensureCameraPermission()
-              if (state == DeviceSessionState.STOPPED) clearSession()
+              if (state == DeviceSessionState.STOPPED) {
+                clearSession()
+                if (wantStream && !mockActive) scheduleRetry()
+              }
             }
           }
           sessionJobs += scope.launch { created.errors.collect { status("Session error: ${it.description}") } }
@@ -317,7 +322,18 @@ class MainActivity : FlutterFragmentActivity() {
     Log.i(FRAME_TAG, "n=$n ${t.w}x${t.h} arrival=${t.arrival} convert=${t.convert} channel=${received - t.sent} draw=${drawn - received} total=${drawn - t.arrival}")
   }
 
+  // Glasses dropped the session (not worn, idle, Meta AI reconnecting): try again every 3 s
+  private fun scheduleRetry() {
+    retryJob?.cancel()
+    retryJob = scope.launch {
+      delay(3000)
+      if (wantStream && session == null) { status("Reconnecting to glasses"); startSession() }
+    }
+  }
+
   private fun stop() {
+    wantStream = false
+    retryJob?.cancel()
     recorder.finish()
     frameCount = 0
     pending.clear()

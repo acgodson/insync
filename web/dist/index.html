@@ -705,13 +705,13 @@ details.qs code { font-family: var(--f-mono); font-size: 12px; color: var(--bob)
         <button role="tab" id="tabSigns" aria-selected="false" aria-controls="vSigns" type="button">My signs<span class="n" id="signCount"></span></button>
       </div>
       <div class="sp"></div>
-      <span id="roomInfo" hidden style="font-family:var(--f-mono);font-size:11px;color:var(--muted);white-space:nowrap;margin-right:4px"></span>
+      <span id="roomInfo" hidden role="button" tabindex="0" title="Copy the join link" style="font-family:var(--f-mono);font-size:11px;color:var(--muted);white-space:nowrap;margin-right:4px;cursor:pointer"></span>
       <span class="status" id="statusPill" role="status"><span class="sdot"></span><span id="statusLbl">Live</span><span class="mono" id="liveTime">00:00</span></span>
-      <button class="me" id="persBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Your settings"><span>A</span></button>
+      <button class="me" id="persBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Your settings"><svg class="i"><use href="#user"/></svg></button>
       <span id="conn" hidden></span><button id="helpBtn" type="button" hidden></button>
     </div>
     <div class="menu" id="menu" role="menu" hidden>
-      <div class="mhead"><b>Alice</b><span>Nigerian Sign Language</span></div>
+      <div class="mhead"><b>You</b><span>Nigerian Sign Language</span></div>
       <button role="menuitem" type="button" id="mPers"><svg class="i"><use href="#user"/></svg>Voice and interpreter</button>
       <button role="menuitem" type="button" id="mTour"><svg class="i"><use href="#refresh"/></svg>Show me around</button>
       <button role="menuitem" type="button" id="mIntro"><svg class="i"><use href="#book"/></svg>How InSync works</button>
@@ -748,7 +748,7 @@ details.qs code { font-family: var(--f-mono); font-size: 12px; color: var(--bob)
             <button class="cb add" id="addSign" type="button" aria-label="Add a sign" title="Add a sign"><svg class="i"><use href="#plus"/></svg><span class="lw">Add a sign</span></button>
           </div>
         </div>
-        <aside class="rail" id="rail" hidden aria-label="Transcript"><div class="rail-h"><b>Transcript</b><button class="cb sm" id="railX" type="button" aria-label="Close transcript"><svg class="i"><use href="#x"/></svg></button></div><div class="tlist" id="tlist"><p class="tag">Everything said in this conversation appears here</p></div></aside>
+        <aside class="rail" id="rail" hidden aria-label="Transcript"><div class="rail-h"><b>Transcript</b><button class="cb sm" id="railX" type="button" aria-label="Close transcript"><svg class="i"><use href="#x"/></svg></button></div><div class="tlist" id="tlist"><p class="tag">Everything said and signed in this room appears here</p></div></aside>
       </section>
       <section class="view" id="vSigns" role="tabpanel" aria-labelledby="tabSigns" hidden>
         <div class="signs">
@@ -5729,7 +5729,7 @@ return exports;})();
       var b = el("button", "vopt"); b.type = "button"; b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(v.voiceURI === prefs.voice));
       var t = el("span", "vt"); t.appendChild(el("b", null, cleanName(v))); t.appendChild(el("small", null, accentOf(v) + " English")); b.appendChild(t);
       var pl = el("span", "vplay"); pl.innerHTML = icon("play"); b.appendChild(pl);
-      b.addEventListener("click", function () { prefs.voice = v.voiceURI; store.set("almero.voice", v.voiceURI); sendSettings(); sayWith("Hi, I'm Alice. Nice to meet you.", v); renderVoiceList(box); });
+      b.addEventListener("click", function () { prefs.voice = v.voiceURI; store.set("almero.voice", v.voiceURI); sendSettings(); sayWith("Hi, nice to meet you.", v); renderVoiceList(box); });
       box.appendChild(b);
     });
   }
@@ -5815,7 +5815,7 @@ return exports;})();
   $("voice").addEventListener("click", function () {
     readAloud = !readAloud; renderVoice();
     if (!readAloud && canSpeak) try { speechSynthesis.cancel(); } catch (e) {}
-    toast(readAloud ? "Read aloud on: Alice's signs are spoken out loud" : "Read aloud off: her signs show as text only");
+    toast(readAloud ? "Read aloud on: your signs are spoken out loud" : "Read aloud off: your signs show as text only");
   });
   renderVoice();
 
@@ -5899,11 +5899,11 @@ return exports;})();
 
   // ---------- transcript
   var signed = [], lastConf = 0;
-  function addLine(speaker, text) {
+  function addLine(speaker, text, name) {   // name: display name off the mock (caption.speaker, or "You")
     var caps = $("caps"), e = $("capsEmpty"); if (e) e.remove();
     var sig = caps.querySelector(".signing"); if (sig) sig.remove();
     var line = el("div", "line " + speaker), who = el("span", "who"), tx = el("span", "tx", text);
-    who.appendChild(document.createTextNode(NAMES[speaker] || speaker));
+    who.appendChild(document.createTextNode(name || NAMES[speaker] || speaker));
     if (speaker === "alice") {
       var rp = el("button", "replay"); rp.type = "button"; rp.innerHTML = icon("spk") + "Play";
       rp.setAttribute("aria-label", "Play this sentence out loud"); rp.addEventListener("click", function () { speak(text, true); });
@@ -5957,7 +5957,7 @@ return exports;})();
     if (sigFilter !== "built") {
       if (!mine.length && sigFilter === "yours") {
         var e0 = el("li", "emptyst"); e0.appendChild(el("b", null, "Record your first sign"));
-        e0.appendChild(el("span", null, "A name, a place, a school word. It takes about 30 seconds."));
+        e0.appendChild(el("span", null, "A name, a place, a word you use often. It takes about 30 seconds."));
         var ab = el("button", "act", "Add a sign"); ab.type = "button"; ab.addEventListener("click", startAdd); e0.appendChild(ab); ul.appendChild(e0);
       }
       mine.slice().reverse().forEach(function (s) { row(s.word, (s.video ? "From a video" : "Recorded") + " · today", true); });
@@ -6274,7 +6274,7 @@ return exports;})();
     } else if (s === "name") {
       stepsBar();
       h(teach.source === "add" ? "Add a sign" : "What does that sign mean?");
-      p(teach.source === "add" ? "Type the word. Names, places and school words are a good start." : "Type the word or phrase you signed");
+      p(teach.source === "add" ? "Type the word. Names, places and words you use often are a good start." : "Type the word or phrase you signed");
       var inp = el("input", "field"); inp.id = "tName"; inp.type = "text"; inp.autocomplete = "off"; inp.placeholder = "e.g. Lagos"; inp.value = teach.label;
       inp.setAttribute("aria-label", "The word for the new sign"); d.appendChild(inp);
       var r2 = row(), nx = btn("act", "Next", function () { teachName(inp.value); }, "tNext"); nx.disabled = !inp.value.trim();
@@ -6416,16 +6416,39 @@ return exports;})();
     if (teach.state === "check" && teach.sub === "result") later(1400, function () { if (teach.state === "check" && teach.sub === "result") teachSave(); });
   }
 
+  // ---------- room link: tapping the room line copies <service>/join/CODE
+  var roomCode = "";
+  function joinLink() {
+    var b = window.insync && window.insync.serviceBase;
+    return String(b || location.origin).replace(/\/+$/, "") + "/join/" + roomCode;
+  }
+  function copyFallback(t) {
+    var ta = el("textarea"); ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    var ok = false; try { ok = document.execCommand("copy"); } catch (e) {}
+    ta.remove(); return ok;
+  }
+  function copyJoinLink() {
+    if (!roomCode) return;
+    var link = joinLink(), done = function () { toast("Link copied"); };
+    var fail = function () { if (copyFallback(link)) done(); else toast("Couldn't copy. Link: " + link, true); };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(link).then(done, fail); else fail();
+    // TODO(phase2): native share sheet through the bridge
+  }
+  $("roomInfo").addEventListener("click", copyJoinLink);
+  $("roomInfo").addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); copyJoinLink(); } });
+
   // ======================================================== service messages
   var holoActive = false;
   function handle(m) {
     switch (m.type) {
       case "room":
-        var ri = $("roomInfo"), np = (m.participants || []).length;
-        ri.textContent = "Room " + m.code + " · " + np + (np === 1 ? " person" : " people"); ri.hidden = false;
+        var ri = $("roomInfo"), np = (m.participants || []).filter(function (p) { return p.role !== "signer"; }).length;
+        roomCode = m.code;
+        ri.textContent = "Room " + m.code + " · " + np + (np === 1 ? " participant" : " participants"); ri.hidden = false;
         break;
       case "status": $("conn").textContent = (m.latency_ms / 1000).toFixed(1) + " s"; break;
-      case "caption": touch(); addLine(m.speaker, m.text); explain("bob", "The teacher speaks. It shows as a subtitle straight away"); break;
+      case "caption": touch(); if (socket.isMock()) addLine(m.speaker, m.text); else addLine("bob", m.text, m.speaker || "Guest"); explain("bob", "The teacher speaks. It shows as a subtitle straight away"); break;
       case "avatar_play":
         if (av) av.play(m.signs, m.fingerspell); if (tab !== "talk") setTab("talk");
         explain("sys", "The avatar signs it." + (m.fingerspell.length ? " Words without a sign are spelled letter by letter (dashed chips)." : ""));
@@ -6439,7 +6462,7 @@ return exports;})();
       case "sign_candidates": renderCands(m.items); verdict([el("span", null, "Checking my sign library…")]); explain("sys", "InSync compares her movement with every sign it knows and ranks its 3 best guesses"); break;
       case "sign_recognized": touch(); lastConf = m.confidence; signed.push(m.label.toUpperCase()); showSigning(); verdict([el("span", "pill ok", "Got it"), el("span", null, m.label.toUpperCase())]); explain("sys", "Top guess is over the 60% line, so it's accepted: " + m.label.toUpperCase()); break;
       case "sentence":
-        signed = []; addLine(m.speaker, m.text); speak(m.text);
+        signed = []; if (socket.isMock()) addLine(m.speaker, m.text); else addLine("alice", m.text, "You"); speak(m.text);
         verdict([el("span", "pill alice", readAloud ? "Said out loud" : "Shown as text"), el("span", null, "“" + m.text + "”")]);
         explain("sys", "Her signs become an English sentence. " + (readAloud ? "It's spoken out loud for the teacher." : "Read aloud is off, so it only shows as text."));
         break;
@@ -6474,7 +6497,7 @@ return exports;})();
     if (holo) holo.hands = [];
     var caps = $("caps"); caps.textContent = ""; var ph = el("div", "placeholder", "Waiting for someone to speak"); ph.id = "capsEmpty"; caps.appendChild(ph);
     $("cands").textContent = ""; verdict([el("span", "pill", "Ready when you are")]);
-    var tl = $("tlist"); tl.innerHTML = '<p class="tag">Everything said in this conversation appears here</p>';
+    var tl = $("tlist"); tl.innerHTML = '<p class="tag">Everything said and signed in this room appears here</p>';
     teach = blankTeach(); setTeach("idle"); if (av) av.clear();
     renderSigns(); refreshSignBtns(); setTab("talk"); live = true; touch(); renderSession();
   }
@@ -6509,15 +6532,15 @@ return exports;})();
     $("onbSkip").hidden = step === "ready";
     if (step === "welcome") {
       left.appendChild(el("h1", null, "Sign, and be understood"));
-      left.appendChild(el("p", "lead", "InSync turns your signs into speech, and other people's speech into signs. It works through your glasses and phone, at school, at work or at the clinic."));
+      left.appendChild(el("p", "lead", "InSync is your accessibility meeting room. Open the app, share the room link, and sign: everyone in the room reads your captions and hears your voice. When they talk, you read captions and your avatar signs it back."));
       acts("Get started", next);
       right.appendChild(el("canvas")); right.id = "onbAvatarSlot";
     } else if (step === "how") {
-      left.appendChild(el("h2", null, "How a conversation works"));
+      left.appendChild(el("h2", null, "How a meeting works"));
       var ul = el("ul", "howto");
-      [["hand", "You sign", "The glasses see your hands. InSync says it out loud for the other person.", "who-a"],
-       ["ear", "They speak", "The avatar signs their words back to you, with subtitles.", "who-b"],
-       ["plus", "Teach it new signs", "Names, places, school words. InSync learns from you and gets better each time.", ""]].forEach(function (r) {
+      [["hand", "You sign", "Your camera sees your hands. Everyone in the room reads your captions and hears your voice.", "who-a"],
+       ["ear", "They speak", "People join from any browser with your link. You read their words and your avatar signs them.", "who-b"],
+       ["plus", "Teach it new signs", "Names, places, words you use often. InSync learns from you and gets better each time.", ""]].forEach(function (r) {
         var li = el("li"), ic = el("span", "ic"); ic.innerHTML = icon(r[0]); li.appendChild(ic);
         var t = el("div"), b = el("b", r[3], r[1]); t.appendChild(b); t.appendChild(el("span", null, r[2])); li.appendChild(t); ul.appendChild(li);
       });
@@ -6531,8 +6554,8 @@ return exports;})();
         '<path d="M205 284 h-40" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4"/><path d="M168 278 l-8 6 8 6" fill="none" stroke="var(--muted)" stroke-width="1.5"/>' +
         '<rect x="40" y="236" width="115" height="96" rx="14" fill="var(--raised)"/><text x="58" y="270" fill="var(--muted)">Signed</text><text x="58" y="298" fill="var(--text)" font-size="20">WHICH</text></g></svg>';
     } else if (step === "lang") {
-      left.appendChild(el("h2", null, "Which sign language do you use?"));
-      left.appendChild(el("p", "lead", "InSync recognises your signs and signs back in the same language."));
+      left.appendChild(el("h2", null, "Your sign language"));
+      left.appendChild(el("p", "lead", "NSL, ASL or BSL. InSync reads your signs in it and your avatar signs back in it."));
       var box = el("div", "langs"); box.setAttribute("role", "radiogroup"); box.setAttribute("aria-label", "Sign language");
       [["nsl", "Nigerian Sign Language", "Ready", true], ["bsl", "British Sign Language", "Coming soon", false], ["asl", "American Sign Language", "Coming soon", false]].forEach(function (l) {
         var b = el("button", "lang"); b.type = "button"; b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(lang === l[0])); b.disabled = !l[3];
@@ -6542,11 +6565,11 @@ return exports;})();
       left.appendChild(box);
       acts("Next", next, "Back", back);
       right.innerHTML = '<svg viewBox="0 0 400 400" aria-hidden="true"><g font-family="Atkinson Hyperlegible Mono, monospace" fill="var(--text)" font-size="22">' +
-        '<text x="70" y="140">HELLO</text><text x="220" y="120" fill="var(--muted)">THANKS</text><text x="110" y="210" fill="var(--alice)">HOMEWORK</text><text x="70" y="280" fill="var(--muted)">QUESTION</text><text x="230" y="300">YES</text></g>' +
+        '<text x="70" y="140">HELLO</text><text x="220" y="120" fill="var(--muted)">THANKS</text><text x="110" y="210" fill="var(--alice)">MEETING</text><text x="70" y="280" fill="var(--muted)">QUESTION</text><text x="230" y="300">YES</text></g>' +
         '<path d="M60 330 H340" stroke="var(--line2)"/><text x="60" y="356" font-family="Atkinson Hyperlegible Next, sans-serif" font-size="14" fill="var(--muted)">22 signs ready, and every one you teach</text></svg>';
     } else if (step === "you") {
       left.appendChild(el("h2", null, "Make it yours"));
-      left.appendChild(el("p", "lead", "Pick the voice InSync uses when it says your signs out loud, and the interpreter that signs to you."));
+      left.appendChild(el("p", "lead", "Pick the voice the room hears when you sign, and the interpreter that signs to you."));
       var vb = el("div", "vlist"); vb.id = "onbVoices"; vb.style.marginTop = "20px"; vb.style.maxHeight = "200px"; renderVoiceList(vb); left.appendChild(vb);
       left.appendChild(el("p", "plbl", "Interpreter skin tone")); var tb2 = el("div", "sws"); tb2.style.justifyContent = "flex-start"; tb2.style.marginTop = "8px"; renderToneList(tb2); left.appendChild(tb2);
       acts("Next", next, "Back", back);
@@ -6562,7 +6585,7 @@ return exports;})();
       right.innerHTML = faceSVG(scanProg); right.id = "scanVis";
     } else if (step === "ready") {
       left.appendChild(el("h2", null, "You're ready"));
-      left.appendChild(el("p", "lead", "Put your glasses on and start talking. A quick tour shows you where everything is."));
+      left.appendChild(el("p", "lead", "Share the room link and start signing. A quick tour shows you where everything is."));
       var ul2 = el("ul", "howto");
       [["check", "Nigerian Sign Language", "22 signs to start"], ["check", scanDone ? "Face set up" : "Face setup skipped", scanDone ? "Saved on this phone" : "You can do it later from Help"]].forEach(function (r) {
         var li = el("li"), ic = el("span", "ic"); ic.innerHTML = icon(r[0]); li.appendChild(ic);
@@ -6593,11 +6616,12 @@ return exports;})();
   // ======================================================== guided tour
   var TOUR = [
     { el: "avbox", t: "Your interpreter", d: "When someone speaks, the avatar signs their words to you, with subtitles underneath." },
-    { el: "comp", t: "Type to sign", d: "Speech comes in through the glasses' mics. People can also type here, or use this device's mic." },
-    { el: "pip", t: "Your hands, live", d: "What the glasses see. When you sign, InSync shows what it read here and says it out loud." },
-    { el: "sessBtn", t: "Pause when you're done", d: "Turns off the glasses' camera and mics so they stop using battery. ", mock: " It also pauses itself after 2 quiet minutes." },
+    { el: "roomInfo", t: "Your room", d: "Tap here to copy the room link. Anyone with it can join from a browser." },
+    { el: "comp", t: "Type or talk", d: "Someone next to you can type here or use this phone's mic. Everyone else talks from their own browser." },
+    { el: "pip", t: "Your hands, live", d: "What your camera sees. When you sign, InSync shows what it read here and sends it to the room as captions and voice." },
+    { el: "sessBtn", t: "Pause when you're done", d: "Turns off the camera and mics so they stop using battery. ", mock: " It also pauses itself after 2 quiet minutes." },
     { el: "voice", t: "Read aloud", d: "Turn the voice for your signed words on or off." },
-    { el: "addSign", t: "Teach it new signs", d: "Record a name, a place or a school word with your camera, then test it." },
+    { el: "addSign", t: "Teach it new signs", d: "Record a name, a place or a word you use often with your camera, then test it." },
     { el: "persBtn", t: "Make it yours", d: "Choose your voice and the interpreter that signs to you." }
   ];
   var tourIdx = -1;

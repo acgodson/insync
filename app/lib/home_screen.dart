@@ -86,6 +86,13 @@ window.dispatchEvent(new Event('insync-ready'));
           await _web?.runJavaScript(_bridge);
           _sendVoices();
         },
+        onWebResourceError: (e) {
+          // Hosted UI unreachable: fall back to the bundled copy
+          if (e.isForMainFrame == true && _settings?.source != WebUiSource.asset) {
+            print('web: ${e.description}, falling back to the bundled UI');
+            _web?.loadFlutterAsset('assets/web/index.html');
+          }
+        },
       ));
     final android = web.platform;
     if (android is AndroidWebViewController) {

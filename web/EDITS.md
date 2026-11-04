@@ -635,3 +635,321 @@ New:
 ```js
 sendUi({ type: "ui_ready", view: insyncBridge() ? "phone" : "projector" });
 ```
+
+## L: meeting-room copy, live speaker names, room line copies the join link
+
+Product pivot (1 signer on the phone, up to ~4 participants in browsers). The mock module and the demo drawer are unchanged; L5 to L8 only change what the live (non-mock) path shows. Find by snippet.
+### L1: Room line in the top bar is a button: pointer, focusable, title (tap copies the join link, L9)
+
+Offset 61778.
+
+Old:
+```js
+<span id="roomInfo" hidden style="font-family:var(--f-mono);font-size:11px;color:var(--muted);white-space:nowrap;margin-right:4px"></span>
+```
+New:
+```js
+<span id="roomInfo" hidden role="button" tabindex="0" title="Copy the join link" style="font-family:var(--f-mono);font-size:11px;color:var(--muted);white-space:nowrap;margin-right:4px;cursor:pointer"></span>
+```
+### L2: Settings menu header: 'You' instead of the Alice placeholder
+
+Offset 62483.
+
+Old:
+```js
+<div class="mhead"><b>Alice</b><span>Nigerian Sign Language</span></div>
+```
+New:
+```js
+<div class="mhead"><b>You</b><span>Nigerian Sign Language</span></div>
+```
+### L3: Settings button: user icon instead of the letter A (Alice)
+
+Offset 62249.
+
+Old:
+```js
+aria-label="Your settings"><span>A</span></button>
+```
+New:
+```js
+aria-label="Your settings"><svg class="i"><use href="#user"/></svg></button>
+```
+### L4: Transcript empty state: room wording (2 places: markup and the reset in JS, both replaced)
+
+Offset 66517.
+
+Old:
+```js
+Everything said in this conversation appears here
+```
+New:
+```js
+Everything said and signed in this room appears here
+```
+### L5: addLine() takes an optional display name (live: caption.speaker, or 'You' for the signer's sentences); the CSS class stays alice/bob
+
+Offset 4757896.
+
+Old:
+```js
+  function addLine(speaker, text) {
+```
+New:
+```js
+  function addLine(speaker, text, name) {   // name: display name off the mock (caption.speaker, or "You")
+```
+### L6: addLine() shows the display name when given
+
+Offset 4758240.
+
+Old:
+```js
+who.appendChild(document.createTextNode(NAMES[speaker] || speaker));
+```
+New:
+```js
+who.appendChild(document.createTextNode(name || NAMES[speaker] || speaker));
+```
+### L7: Off the mock, captions are styled as the hearing side and labelled with caption.speaker (participant name or 'Phone mic')
+
+Offset 4795600.
+
+Old:
+```js
+case "caption": touch(); addLine(m.speaker, m.text); explain(
+```
+New:
+```js
+case "caption": touch(); if (socket.isMock()) addLine(m.speaker, m.text); else addLine("bob", m.text, m.speaker || "Guest"); explain(
+```
+### L8: Off the mock, the signer's own sentences are labelled 'You'
+
+Offset 4796997.
+
+Old:
+```js
+signed = []; addLine(m.speaker, m.text); speak(m.text);
+```
+New:
+```js
+signed = []; if (socket.isMock()) addLine(m.speaker, m.text); else addLine("alice", m.text, "You"); speak(m.text);
+```
+### L9: Room line: 'Room CODE · N participants' (signer excluded), remembers the code for the join link
+
+Offset 4795215.
+
+Old:
+```js
+        var ri = $("roomInfo"), np = (m.participants || []).length;
+        ri.textContent = "Room " + m.code + " · " + np + (np === 1 ? " person" : " people"); ri.hidden = false;
+```
+New:
+```js
+        var ri = $("roomInfo"), np = (m.participants || []).filter(function (p) { return p.role !== "signer"; }).length;
+        roomCode = m.code;
+        ri.textContent = "Room " + m.code + " · " + np + (np === 1 ? " participant" : " participants"); ri.hidden = false;
+```
+### L10: Tap (or Enter/Space) on the room line copies <serviceBase or location.origin>/join/CODE and toasts 'Link copied'
+
+Offset 4793873.
+
+Old:
+```js
+  // ======================================================== service messages
+  var holoActive = false;
+```
+New:
+```js
+  // ---------- room link: tapping the room line copies <service>/join/CODE
+  var roomCode = "";
+  function joinLink() {
+    var b = window.insync && window.insync.serviceBase;
+    return String(b || location.origin).replace(/\/+$/, "") + "/join/" + roomCode;
+  }
+  function copyFallback(t) {
+    var ta = el("textarea"); ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    var ok = false; try { ok = document.execCommand("copy"); } catch (e) {}
+    ta.remove(); return ok;
+  }
+  function copyJoinLink() {
+    if (!roomCode) return;
+    var link = joinLink(), done = function () { toast("Link copied"); };
+    var fail = function () { if (copyFallback(link)) done(); else toast("Couldn't copy. Link: " + link, true); };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(link).then(done, fail); else fail();
+    // TODO(phase2): native share sheet through the bridge
+  }
+  $("roomInfo").addEventListener("click", copyJoinLink);
+  $("roomInfo").addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); copyJoinLink(); } });
+
+  // ======================================================== service messages
+  var holoActive = false;
+```
+### L11: Voice preview line without the Alice name
+
+Offset 4746555.
+
+Old:
+```js
+sayWith("Hi, I'm Alice. Nice to meet you.", v)
+```
+New:
+```js
+sayWith("Hi, nice to meet you.", v)
+```
+### L12: Read aloud toast: 'your signs' instead of Alice/her
+
+Offset 4752403.
+
+Old:
+```js
+toast(readAloud ? "Read aloud on: Alice's signs are spoken out loud" : "Read aloud off: her signs show as text only");
+```
+New:
+```js
+toast(readAloud ? "Read aloud on: your signs are spoken out loud" : "Read aloud off: your signs show as text only");
+```
+### L13: Onboarding welcome: the meeting-room product
+
+Offset 4801967.
+
+Old:
+```js
+"InSync turns your signs into speech, and other people's speech into signs. It works through your glasses and phone, at school, at work or at the clinic."
+```
+New:
+```js
+"InSync is your accessibility meeting room. Open the app, share the room link, and sign: everyone in the room reads your captions and hears your voice. When they talk, you read captions and your avatar signs it back."
+```
+### L14: Onboarding 'how': a meeting, not a classroom
+
+Offset 4802321.
+
+Old:
+```js
+      left.appendChild(el("h2", null, "How a conversation works"));
+      var ul = el("ul", "howto");
+      [["hand", "You sign", "The glasses see your hands. InSync says it out loud for the other person.", "who-a"],
+       ["ear", "They speak", "The avatar signs their words back to you, with subtitles.", "who-b"],
+       ["plus", "Teach it new signs", "Names, places, school words. InSync learns from you and gets better each time.", ""]]
+```
+New:
+```js
+      left.appendChild(el("h2", null, "How a meeting works"));
+      var ul = el("ul", "howto");
+      [["hand", "You sign", "Your camera sees your hands. Everyone in the room reads your captions and hears your voice.", "who-a"],
+       ["ear", "They speak", "People join from any browser with your link. You read their words and your avatar signs them.", "who-b"],
+       ["plus", "Teach it new signs", "Names, places, words you use often. InSync learns from you and gets better each time.", ""]]
+```
+### L15: Onboarding language step: 'Your sign language' (NSL / ASL / BSL)
+
+Offset 4804615.
+
+Old:
+```js
+      left.appendChild(el("h2", null, "Which sign language do you use?"));
+      left.appendChild(el("p", "lead", "InSync recognises your signs and signs back in the same language."));
+```
+New:
+```js
+      left.appendChild(el("h2", null, "Your sign language"));
+      left.appendChild(el("p", "lead", "NSL, ASL or BSL. InSync reads your signs in it and your avatar signs back in it."));
+```
+### L16: Language step illustration: MEETING instead of HOMEWORK
+
+Offset 4805856.
+
+Old:
+```js
+fill="var(--alice)">HOMEWORK</text>
+```
+New:
+```js
+fill="var(--alice)">MEETING</text>
+```
+### L17: Onboarding 'make it yours': the room hears the voice
+
+Offset 4806334.
+
+Old:
+```js
+"Pick the voice InSync uses when it says your signs out loud, and the interpreter that signs to you."
+```
+New:
+```js
+"Pick the voice the room hears when you sign, and the interpreter that signs to you."
+```
+### L18: Onboarding ready: share the link instead of 'put your glasses on'
+
+Offset 4807880.
+
+Old:
+```js
+"Put your glasses on and start talking. A quick tour shows you where everything is."
+```
+New:
+```js
+"Share the room link and start signing. A quick tour shows you where everything is."
+```
+### L19: Tour: room line step, meeting wording for the composer, hands view, pause and teach steps
+
+Offset 4809841.
+
+Old:
+```js
+    { el: "comp", t: "Type to sign", d: "Speech comes in through the glasses' mics. People can also type here, or use this device's mic." },
+    { el: "pip", t: "Your hands, live", d: "What the glasses see. When you sign, InSync shows what it read here and says it out loud." },
+    { el: "sessBtn", t: "Pause when you're done", d: "Turns off the glasses' camera and mics so they stop using battery. ", mock: " It also pauses itself after 2 quiet minutes." },
+```
+New:
+```js
+    { el: "roomInfo", t: "Your room", d: "Tap here to copy the room link. Anyone with it can join from a browser." },
+    { el: "comp", t: "Type or talk", d: "Someone next to you can type here or use this phone's mic. Everyone else talks from their own browser." },
+    { el: "pip", t: "Your hands, live", d: "What your camera sees. When you sign, InSync shows what it read here and sends it to the room as captions and voice." },
+    { el: "sessBtn", t: "Pause when you're done", d: "Turns off the camera and mics so they stop using battery. ", mock: " It also pauses itself after 2 quiet minutes." },
+```
+### L20: Tour teach step: no school framing
+
+Offset 4810585.
+
+Old:
+```js
+"Record a name, a place or a school word with your camera, then test it."
+```
+New:
+```js
+"Record a name, a place or a word you use often with your camera, then test it."
+```
+### L21: My signs empty state: no school framing
+
+Offset 4761820.
+
+Old:
+```js
+"A name, a place, a school word. It takes about 30 seconds."
+```
+New:
+```js
+"A name, a place, a word you use often. It takes about 30 seconds."
+```
+### L22: Teach name step hint: no school framing
+
+Offset 4783543.
+
+Old:
+```js
+"Type the word. Names, places and school words are a good start."
+```
+New:
+```js
+"Type the word. Names, places and words you use often are a good start."
+```
+
+### L verification
+
+- `html.parser` parses the file; all 6 inline scripts pass `node --check`. No "Almero" in markup or UI strings.
+- Headless Chrome on `/app?mock=0&room=SMKE` against the local service with a participant "Bob": room line reads
+  "Room SMKE · 1 participant", Bob's caption is labelled "Bob", the menu header reads "You". Tapping the room line
+  builds `http://localhost:8000/join/SMKE` (headless has no clipboard, so it fell back to the "Couldn't copy. Link: ..." toast).
+- Remaining "Alice"/"Teacher" text is in the mock-only demo drawer and the mock's explain() log, left as is.

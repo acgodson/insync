@@ -84,7 +84,7 @@ async def main():
         p0 = len(par_seen)
         await send(sig, type="speech_text", text="nice to meet you")
         m = await wait_for(par_seen, "caption", p0)
-        check("participant gets caption from signer-side mic", m is not None and m["text"] == "nice to meet you", m)
+        check("participant gets caption from signer-side mic", m is not None and m["text"] == "nice to meet you" and m["speaker"] == "Phone mic", m)
 
         # Bad message never breaks the room
         await par.send("not json")
@@ -105,7 +105,7 @@ async def main():
             s0, p0 = len(sig_seen), len(par_seen)
             await stream(sig, folders[2])
             m = await wait_for(sig_seen, "sentence", s0, timeout=6)
-            check("signer gets sentence", m is not None, m)
+            check("signer gets sentence from Alice", m is not None and m["speaker"] == "Alice", m)
             cap = await wait_for(par_seen, "caption", p0, timeout=3)
             spk = await wait_for(par_seen, "speak", p0, timeout=3)
             check("participant gets caption 'wave' from Alice", cap is not None and cap["text"] == "wave" and cap["speaker"] == "Alice", cap)

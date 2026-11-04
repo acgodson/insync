@@ -72,7 +72,7 @@ class Room:
     async def on_session_emit(self, m):
         await self.to_signer(m)
         if m["type"] == "sentence" and m.get("text"):
-            await self.to_participants(message("caption", speaker=self.signer_name, text=m["text"]))
+            await self.to_participants(message("caption", speaker=m["speaker"], text=m["text"]))
             await self.to_participants(message("speak", text=m["text"]))
             # TODO(phase2): Claude ordering before speaking, ElevenLabs voice server-side
         elif m["type"] == "caption":   # signer-side phone mic
@@ -89,7 +89,8 @@ class Room:
             except Exception:
                 pass
         if self.session is None:
-            self.session = Session(self.on_session_emit)
+            self.session = Session(self.on_session_emit, name)
+        self.session.signer_name = name   # a replacing signer brings its own name
         await self.broadcast_room()
 
     async def join_participant(self, ws, name):

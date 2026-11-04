@@ -7,7 +7,7 @@ class AppSettings {
   static const defaultHost = 'https://insync.13-216-97-225.sslip.io'; // AWS; use http://<laptop-ip>:8000 for local
   static const defaultDevUrl = 'http://10.234.119.143:5173';
 
-  WebUiSource source = WebUiSource.asset;
+  WebUiSource source = WebUiSource.prod;
   String devUrl = defaultDevUrl;
   String prodUrl = '$defaultHost/app';
   String serviceHost = defaultHost;
@@ -20,7 +20,7 @@ class AppSettings {
   static Future<AppSettings> load() async {
     final p = await SharedPreferences.getInstance();
     final s = AppSettings();
-    s.source = WebUiSource.values[p.getInt('web_ui_source') ?? WebUiSource.asset.index];
+    s.source = WebUiSource.values[p.getInt('web_ui_source') ?? WebUiSource.prod.index];
     s.devUrl = p.getString('web_ui_dev_url') ?? defaultDevUrl;
     s.prodUrl = p.getString('web_ui_prod_url') ?? '$defaultHost/app';
     s.serviceHost = p.getString('service_host') ?? defaultHost;

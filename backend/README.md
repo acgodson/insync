@@ -24,8 +24,8 @@ Env: `CONFIDENCE_THRESHOLD` (default 0.6, set 0 for the skeleton), `TAKES_REQUIR
 
 ## Rooms
 
-A room has a 4-letter code, one signer (the app, owns the recognition session) and any number of
-browser participants. Rooms live in memory and disappear when the last person leaves.
+A room has a 4-letter code, one signer (the app, owns the recognition session) and a handful of
+browser participants (sized for about 4, not enforced). Rooms live in memory and disappear when the last person leaves.
 
 ```
 curl -X POST http://<host>:8000/rooms      # {"code": "KMPX", "link": "http://<host>:8000/join/KMPX"}
@@ -43,8 +43,8 @@ Routing:
 | Event | Signer gets | Participants get |
 |---|---|---|
 | any join or leave | `room {code, participants}` | `room {code, participants}` |
-| signer's recognised `sentence` | `sentence` (and all other session messages) | `caption {speaker: signer name, text}`, `speak {text}` |
-| signer-side `speech_text` (phone mic) | `caption`, `avatar_play` | `caption` |
+| signer's recognised `sentence` | `sentence {speaker: signer name}` (and all other session messages) | `caption {speaker: signer name, text}`, `speak {text}` |
+| signer-side `speech_text` (phone mic) | `caption {speaker: "Phone mic"}`, `avatar_play` | `caption {speaker: "Phone mic"}` |
 | participant `speech_text {text}` | `caption {speaker: participant name}`, `avatar_play` | `caption {speaker: participant name}` |
 
 `status`, `landmarks`, sign events and teaching stay signer-only.
@@ -52,8 +52,9 @@ Routing:
 ## Join page
 
 Participants open `http://<host>:8000/join/<code>` (`static/join.html`, single file). It asks for a name
-(kept in localStorage), shows the room and captions, speaks the signer's sentences with the browser's
-speech synthesis, and sends speech from the mic button (Chrome/Safari `webkitSpeechRecognition`) or the
+(kept in localStorage), shows the room code, the people in the room (signer marked), whether the signer is
+live, and the captions (newest at the bottom). It speaks the signer's sentences with the browser's
+speech synthesis ("Speak captions aloud" toggle, on by default), and sends speech from the mic button (Chrome/Safari `webkitSpeechRecognition`) or the
 text box. Reconnects every 2 s. Mic recognition needs `localhost` or https in most browsers; on a LAN IP
 over plain http use the text box.
 
