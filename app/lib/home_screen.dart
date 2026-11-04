@@ -291,8 +291,14 @@ window.dispatchEvent(new Event('insync-ready'));
   String get _stateText {
     final s = _nativeStatus;
     if (!_live) return 'Paused';
-    if (s.startsWith('Source:') || s.startsWith('Stream:') || s.startsWith('Session:')) {
+    if (s.startsWith('Session: STOPPED') || s.startsWith('Session error') || s.startsWith('Stream: CLOSED')) {
+      return _mirror ? 'Phone camera: restarting' : 'Reconnecting to glasses';
+    }
+    if (s.startsWith('Stream: STREAMING') || s.startsWith('Session: STARTED') || s.startsWith('Source:')) {
       return _mirror ? 'Phone camera' : 'Glasses: connected';
+    }
+    if (s.startsWith('Stream:') || s.startsWith('Session:')) {
+      return _mirror ? 'Phone camera: starting' : 'Glasses: starting';
     }
     if (s.startsWith('Waiting for glasses')) return 'Waiting for glasses (wear them)';
     if (s.startsWith('No glasses')) return 'No glasses: phone camera';
