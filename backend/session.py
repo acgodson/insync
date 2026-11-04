@@ -1,6 +1,7 @@
 """One signer's state: camera frames, segmentation, recognition, teaching, and the language module."""
 import asyncio
 import base64
+import re
 import time
 
 import numpy as np
@@ -10,6 +11,9 @@ import pipeline
 from language.config import Settings
 from language.module import LanguageModule
 from toolkit import extract, segment
+
+STOP_WORDS = {"a", "an", "the", "is", "are", "am", "to", "of", "in", "on", "at", "and", "or", "it", "this", "that",
+              "i", "you", "we", "me", "my", "your", "do", "does", "did", "be", "was", "were", "so", "ok", "okay"}
 
 
 class Session:
@@ -162,9 +166,17 @@ class Session:
     # --- Speech -> avatar (hearing side) ---
 
     async def on_speech(self, text, speaker="Phone mic"):
-        """A hearing person's words: caption, then Claude-ordered signs for the avatar."""
+        """A hearing person's words: caption, then Claude-ordered signs for the avatar.
+        If the gloss has no sign for the words (e.g. "whatsapp"), the avatar still fingerspells
+        the content words instead of standing still."""
         self.lang.s.speaker_hearing = speaker
+        self.lang.last_gloss = None
         await self.lang.on_text(text)
+        res = getattr(self.lang, "last_gloss", None)
+        if res is not None and not res.items:
+            words = [w for w in re.findall(r"[A-Za-z0-9']+", text) if w.lower() not in STOP_WORDS][:3]
+            if words:
+                await self.emit("avatar_play", signs=[], fingerspell=[w.lower() for w in words])
 
     # --- Status ---
 
