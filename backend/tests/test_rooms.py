@@ -16,7 +16,7 @@ results = []
 
 
 def check(name, ok, detail=""):
-    results.append(ok)
+    results.append(bool(ok))
     print(f"{'PASS' if ok else 'FAIL'}  {name}" + (f"  ({detail})" if detail and not ok else ""))
 
 

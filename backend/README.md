@@ -46,12 +46,20 @@ Routing:
 | signer's recognised `sentence` | `sentence {speaker: signer name}` (and all other session messages) | `caption {speaker: signer name, text}`, `speak {text}` |
 | signer-side `speech_text` (phone mic) | `caption {speaker: "Phone mic"}`, `avatar_play` | `caption {speaker: "Phone mic"}` |
 | participant `speech_text {text}` | `caption {speaker: participant name}`, `avatar_play` | `caption {speaker: participant name}` |
+| signer's sentence voiced (ElevenLabs) | `speech_audio {audio, format, text}` | `speech_audio {audio, format, text}` |
+| each signer frame | `landmarks {hands, w, h}` | `landmarks {hands, w, h}` (drawn on the signer's tile) |
 
-`status`, `landmarks`, sign events and teaching stay signer-only.
+`landmarks` carries the frame size (`w`, `h`) so a viewer can map the head-relative points back to the image.
+`status`, sign events and teaching stay signer-only.
 
 ## Join page
 
-Participants open `http://<host>:8000/join/<code>` (`static/join.html`, single file). It asks for a name
+`http://<host>:8000/join/<code>` serves the same meeting-room page as the signer (`web/dist/index.html`, see
+`web/EDITS.md` section N). It reads the code from the path and offers **I speak** (participant, the default:
+`role=participant`, no camera, mic or typing -> `speech_text`, captions, the signer's voice via `speech_audio` /
+`speak`, the signer's hand traces on the signer's tile) or **I sign** (joins as the signer and replaces the current one).
+
+The old lightweight page is kept at `http://<host>:8000/join-lite/<code>` (`static/join.html`, single file). It asks for a name
 (kept in localStorage), shows the room code, the people in the room (signer marked), whether the signer is
 live, and the captions (newest at the bottom). It speaks the signer's sentences with the browser's
 speech synthesis ("Speak captions aloud" toggle, on by default), and sends speech from the mic button (Chrome/Safari `webkitSpeechRecognition`) or the

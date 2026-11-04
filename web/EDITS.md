@@ -1452,22 +1452,43 @@ Femi's mock class (`S3`) and everything it does with `?mock=1` are untouched.
    On every open: `ui_ready {view:"phone"}`, `settings {language, voice}`, `session {state}`. His self-view webcam
    (`getUserMedia`, user-facing, ideal 640x480) -> `frame {jpeg (base64, no data: prefix), w, h, ts}` at 10 fps while
    live and connected (dropped when > 512 KB is buffered); Pause / Camera off stop the track.
+4. Live, opened at **`/join/CODE`** (the join link; the backend serves this page there, the old page moved to
+   `/join-lite/CODE`): his join screen titled "Join the room" with the code from the path and his role choice visible:
+   **I speak** (default) = participant, **I sign** = signer (replaces the current signer; then exactly mode 3, frames and all).
+   The camera preview is switched off for I speak; the sign-language select only shows for I sign.
+   Participant: `ws(s)://host/ws?room=CODE&role=participant&name=NAME`, no frames and no webcam in the room (camera
+   button, Pause and Add a sign hidden), his Mic (browser speech recognition) and the composer -> `speech_text`.
+   Tiles: the signer's tile is pinned (his default for the "speak" role) and shows the signer's name, the signer's hand
+   traces from `landmarks` on the dark tile (no video is shared; unmirrored, mapped with the frame size the service now
+   sends) and "Signing" / "Amaka is signing. Please wait" while hands are seen (off after 0.8 s without). Captions show in
+   his in-tile caption band; the full conversation and the composer are his Transcript panel (Transcript button, or
+   More > Transcript on narrow screens), so the tiles stay the main screen. `speak` / `speech_audio` -> the signer's
+   voice ("Speak captions aloud" in More, on by default; ElevenLabs audio within 2.5 s, else speechSynthesis).
+   Close 4404 (no such room) stops reconnecting with a toast; close 4000 (another signer took over) the same.
+   Room code in the header with a Copy join link button (both roles).
 
 ### Service -> his UI (in `insyncConnect`)
 
 | Service | UI |
 |---|---|
-| `room {code, participants}` | room code (header "Room CODE", info popover with the join link + Copy join link, empty-room card with code, link and Copy join link), `leave {id}` for each one gone, then `participants {items}` (the signer = this page's own entry; participants get ids `u-NAME-n`, role speak) |
+| `room {code, participants}` | room code (header "Room CODE" + Copy join link button, info popover with the join link + Copy join link, empty-room card with code, link and Copy join link), `leave {id}` for each one gone, then `participants {items}` (the signer = this page's own entry; participants get ids `u-NAME-n`, role speak; on a participant page the signer is `s-NAME`, role sign, and the first participant with this page's name is this page) |
 | `caption {speaker: name}` | `caption {speaker: id}` (name kept for "Phone mic"), plus `speaking` on/off for 1.5 s on that tile |
 | `sentence` | `sentence {speaker: own id}`; read aloud if on: bridge `insync.speak`, live waits 2.5 s for `speech_audio` (same text) and plays it, else `speechSynthesis` |
 | `speech_audio` | live: played (see above); bridge: ignored (the app speaks) |
+| `speak {text}` (participants) | read aloud as above (wait 2.5 s for `speech_audio`) |
+| `landmarks` on a participant page | drawn on the signer's tile + `signing {id, on}` for his chip and banner |
 | `landmarks` (head-relative) | image 0..1 with the service anchors (`NOSE_ANCHOR=(0.5,-0.15)`, `FACE_WIDTH=0.30`, frame aspect), drawn by his self view and teach studio; his `signing` state comes from them |
 | `avatar_play {signs, fingerspell}` | labels lowercased; labels not in his avatar table are fingerspelled; fingerspell passed on |
 | `status` | ignored |
 | others | as is |
 
 His outgoing `state`, `speaking`, `signing`, `hands`, `teach_landmarks` are UI-only and not sent; `voice {name}` becomes
-`settings {language, voice}`; `leave` closes the socket. No backend change was needed.
+`settings {language, voice}`; `leave` closes the socket.
+
+Backend changes for the participant view (smallest possible): `GET /join/{code}` serves `web/dist/index.html`
+(`GET /join-lite/{code}` keeps `static/join.html`); `rooms.py` `on_session_emit` also sends `landmarks` to participants;
+`session.py` adds the frame size `w, h` to `landmarks` (additive). Documented in `backend/README.md` (routing table, Join
+page). `tests/test_rooms.py`: `check()` stores `bool(ok)` (a truthy string result broke the final sum).
 
 ### Edits
 
@@ -1482,9 +1503,10 @@ New code:
 /* ---------- InSync (N1): mode, transport, app bridge ----------
    window.insync.native -> "bridge": the app owns camera frames, socket, room and speech.
    ?mock=1 -> "mock": Femi's demo, untouched.  Otherwise "live": this browser is the signer
-   (room from ?room= or POST /rooms, WebSocket with 2 s reconnect, webcam frames at 10 fps).
+   (room from ?room= or POST /rooms, WebSocket with 2 s reconnect, webcam frames at 10 fps), or, opened
+   at /join/CODE, joins that room as a participant ("I speak", the default) or as the signer ("I sign").
    T3() routes here off the mock; incoming service messages are mapped onto the UI's own events. */
-const INS={mode:"pending",code:"",frame:{w:4,h:3},nativeVoices:!1,upTakes:0,listening:!1,conn:null,isLive:()=>!0,cam:()=>null,setCode:()=>{}};
+const INS={mode:"pending",viewer:!1,joinCode:((location.pathname.match(/^\/join\/([A-Za-z]{4,8})\/?$/)||[])[1]||"").toUpperCase(),code:"",frame:{w:4,h:3},nativeVoices:!1,upTakes:0,listening:!1,conn:null,isLive:()=>!0,cam:()=>null,setCode:()=>{}};
 function insyncBridge(){const b=window.insync;return b&&b.native===!0?b:null}
 const bridgeHandlers={};
 function attachBridge(){const b=insyncBridge();if(!b)return null;for(const k in bridgeHandlers)b[k]=bridgeHandlers[k];return b}
@@ -1510,23 +1532,32 @@ function insyncBoot(mock,live,bridge){let done=!1;const go=m=>{if(done)return;do
 function insyncSetup(){const hide=id=>{const e=typeof id=="string"?ee(id):id;e&&(e.hidden=!0)};
   hide("handBtn"),hide("leftHome");
   const say=ee("say");say.placeholder="Someone next to me: type what they say",say.setAttribute("aria-label",say.placeholder),ee("micBtn").title="Someone next to me speaks: captions their words";
-  const al=ee("mAloud"),ra=()=>{al.lastChild.textContent=`Read my signs aloud: ${INS.aloud()?"on":"off"}`,al.setAttribute("aria-checked",String(INS.aloud()))};
-  al.hidden=!1,ra(),al.addEventListener("click",()=>{xn.set("readAloud",INS.aloud()?"0":"1"),INS.aloud()||Km(),ra()});
+  const al=ee("mAloud"),ra=()=>{al.lastChild.textContent=`${INS.viewer?"Speak captions aloud":"Read my signs aloud"}: ${INS.aloud()?"on":"off"}`,al.setAttribute("aria-checked",String(INS.aloud()))};
+  INS.ra=ra,al.hidden=!1,ra(),al.addEventListener("click",()=>{xn.set("readAloud",INS.aloud()?"0":"1"),INS.aloud()||Km(),ra()});
   if(INS.mode==="bridge"){INS.frame={w:504,h:896},hide("leaveBtn"),hide("camBtn"),attachBridge();return}
-  const q=new URLSearchParams(location.search);ee("roleSign").click(),hide(document.querySelector("#joinForm .roles")),hide("roleLabel"),hide("joinTip"),hide("joinBack");
-  ee("joinTitle").textContent="Start your room",ee("joinNow").textContent="Start";
-  const a=ee("joinRoom");a.value=(q.get("room")||"").trim().toUpperCase(),a.placeholder="New room";
+  const q=new URLSearchParams(location.search),jc=INS.joinCode;hide("joinTip"),hide("joinBack");
+  if(jc){ee("roleSpeak").click(),ee("roleSign").querySelector("b").textContent="I sign",ee("roleSign").querySelector("small").textContent="I'm the signer: my camera reads my signs, and InSync speaks them for the room";
+    ee("joinTitle").textContent="Join the room",ee("joinNow").textContent="Join"}
+  else ee("roleSign").click(),hide(document.querySelector("#joinForm .roles")),hide("roleLabel"),ee("joinTitle").textContent="Start your room",ee("joinNow").textContent="Start";
+  const a=ee("joinRoom");a.value=jc||(q.get("room")||"").trim().toUpperCase(),a.placeholder="New room";
   const nm=ee("joinName");nm.placeholder="Your name",xn.get("name")||q.get("name")||(nm.value="");
   const lab=te("label","field-label","Sign language");lab.htmlFor="joinLang";const sel=te("select","teach-input");sel.id="joinLang";
   for(const[v,t]of[["nsl","NSL · Nigerian Sign Language"],["ase","ASL · American Sign Language"],["bfi","BSL · British Sign Language"]]){const o=te("option",void 0,t);o.value=v,sel.appendChild(o)}
   sel.value=INS.lang(),sel.addEventListener("change",()=>xn.set("lang",sel.value));
   const ck=te("label","field-label");ck.style.cssText="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--text);cursor:pointer";
   const cb=te("input");cb.type="checkbox",cb.id="joinAloud",cb.checked=INS.aloud(),cb.style.cssText="width:20px;height:20px;margin:0",cb.addEventListener("change",()=>{xn.set("readAloud",cb.checked?"1":"0"),ra()});
-  ck.append(cb,te("span",void 0,"Read my signs aloud")),ee("roleLabel").before(lab,sel,ck)}
+  ck.append(cb,te("span",void 0,"Read aloud")),ee("roleLabel").before(ck);
+  ee("roleLabel").parentElement.insertBefore(lab,ee("joinNow")),ee("joinNow").before(sel);
+  const sh=()=>{const sg=ee("roleSign").getAttribute("aria-checked")==="true";lab.hidden=sel.hidden=!sg,ck.lastChild.textContent=sg?"Read my signs aloud":"Speak captions aloud";
+    jc&&ee("joinCam").getAttribute("aria-pressed")!==String(sg)&&ee("joinCam").click()};   /* a participant needs no camera */
+  document.querySelectorAll("#joinForm .role").forEach(b=>b.addEventListener("click",sh)),sh()}
 function insyncConnect(me,code,emit,status){
-  let ws=null,closed=!1,people=[],timer=0;const pending=new Map,grab=document.createElement("canvas");
+  const viewer=INS.viewer=INS.mode==="live"&&me.role==="speak";
+  let ws=null,closed=!1,people=[],timer=0,signing=!1,sgOff=0;
+  if(viewer){me.cam=!1;const o=INS.cam();o&&o.stop()}
+  for(const id of["addSign","pauseBtn"])ee(id).hidden=viewer;INS.mode==="live"&&(ee("camBtn").hidden=viewer);INS.ra&&INS.ra();const pending=new Map,grab=document.createElement("canvas");
   const NOSE=[.5,-.15],FW=.3;   /* backend config.py NOSE_ANCHOR / FACE_WIDTH: head-relative -> image 0..1 */
-  function toImage(hands){const o=INS.cam(),v=o&&o.state==="on"&&o.video.videoWidth?o.video:null,w=v?v.videoWidth:INS.frame.w,h=v?v.videoHeight:INS.frame.h;
+  function toImage(hands,fw,fh){const o=INS.cam(),v=o&&o.state==="on"&&o.video.videoWidth?o.video:null,w=fw||(v?v.videoWidth:INS.frame.w),h=fh||(v?v.videoHeight:INS.frame.h);
     return hands.map(hd=>({side:hd.side,visible:hd.visible,points:(hd.points||[]).map(p=>[NOSE[0]+p[0]*FW,NOSE[1]-p[1]*FW*w/h,(p[2]||0)*FW])}))}
   function speakSentence(text){if(!text||!INS.aloud())return;if(INS.mode==="bridge"){const b=attachBridge();if(b)try{b.speak(text)}catch{}return}
     clearTimeout(pending.get(text)),pending.set(text,setTimeout(()=>{pending.delete(text),p0(text)},2500))}
@@ -1534,13 +1565,22 @@ function insyncConnect(me,code,emit,status){
     const mime=m.format==="mp3"?"audio/mpeg":`audio/${m.format||"mpeg"}`;new Audio(`data:${mime};base64,${m.audio}`).play().catch(()=>p0(m.text))}
   function avatar(m){const signs=[],spell=[];for(const w of m.signs||[]){const k=String(w).toLowerCase();Uh.has(k)?signs.push(k):spell.push(k.replace(/[^a-z]/g,""))}
     return{...m,signs,fingerspell:[...spell,...(m.fingerspell||[])].filter(Boolean)}}
+  /* participant view: the signer's hand traces on the signer's tile (no video is shared), and its "Signing" state */
+  function drawSigner(m){const sg=people.find(p=>p.role==="sign");if(!sg)return;const t=document.getElementById(`tile-${sg.id}`),hands=m.hands||[];
+    if(t){let c=t.querySelector("canvas.ins-trace");c||(c=document.createElement("canvas"),c.className="ins-trace",c.style.cssText="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none",t.prepend(c));
+      const W=c.clientWidth,H=c.clientHeight,d=Math.min(2,devicePixelRatio||1);if(W&&H){c.width!==Math.round(W*d)&&(c.width=Math.round(W*d)),c.height!==Math.round(H*d)&&(c.height=Math.round(H*d));
+        const g=c.getContext("2d"),fw=m.w||640,fh=m.h||480,k=Math.min(W/fw,H/fh);g.setTransform(d,0,0,d,0,0),g.clearRect(0,0,W,H);
+        h0(g,toImage(hands,fw,fh).map(hd=>hd.points.map(([x,y,z])=>({x,y,z}))),{x:(W-fw*k)/2,y:(H-fh*k)/2,w:fw*k,h:fh*k},Math.max(1.5,W/260))}}
+    if(hands.length){clearTimeout(sgOff),sgOff=0,signing||(signing=!0,emit({type:"signing",id:sg.id,on:!0}))}
+    else signing&&!sgOff&&(sgOff=setTimeout(()=>{sgOff=0,signing=!1,emit({type:"signing",id:sg.id,on:!1})},800))}
   function incoming(m){if(!m||!m.type)return;switch(m.type){
     case"room":{m.code&&m.code!==INS.code&&INS.setCode(m.code);const ps=m.participants||[],sg=ps.find(p=>p.role==="signer");INS.mode==="bridge"&&sg&&(me.name=sg.name);
-      const prev=people,seen={};people=ps.filter(p=>p.role!=="signer").map(p=>{const k=seen[p.name]=(seen[p.name]||0)+1;return{id:`u-${p.name}-${k}`,name:p.name,role:"speak",mic:!0,cam:!1}});
+      const prev=people,seen={};let self=!1;people=ps.filter(p=>{if(viewer&&!self&&p.role!=="signer"&&p.name===me.name)return self=!0,!1;return viewer||p.role!=="signer"}).map(p=>{if(p.role==="signer")return{id:`s-${p.name}`,name:p.name,role:"sign",mic:!1,cam:!0};const k=seen[p.name]=(seen[p.name]||0)+1;return{id:`u-${p.name}-${k}`,name:p.name,role:"speak",mic:!0,cam:!1}});
       prev.filter(p=>!people.some(x=>x.id===p.id)).forEach(p=>emit({type:"leave",id:p.id,ts:m.ts})),emit({type:"participants",items:[me,...people],ts:m.ts});return}
-    case"caption":{const p=people.find(x=>x.name===m.speaker),id=p?p.id:m.speaker;emit({...m,speaker:id});p&&(emit({type:"speaking",id,on:!0}),setTimeout(()=>emit({type:"speaking",id,on:!1}),1500));return}
+    case"caption":{const p=people.find(x=>x.name===m.speaker),id=viewer&&m.speaker===me.name?me.id:p?p.id:m.speaker;emit({...m,speaker:id});p&&(emit({type:"speaking",id,on:!0}),setTimeout(()=>emit({type:"speaking",id,on:!1}),1500));return}
     case"sentence":emit({...m,speaker:me.id,voice:""}),speakSentence(m.text);return;
-    case"landmarks":emit({...m,hands:toImage(m.hands||[])});return;
+    case"landmarks":viewer?drawSigner(m):emit({...m,hands:toImage(m.hands||[])});return;
+    case"speak":speakSentence(m.text);return;
     case"avatar_play":emit(avatar(m));return;
     case"speech_audio":playAudio(m);return;
     case"status":case"room_closed":return;
@@ -1556,22 +1596,22 @@ function insyncConnect(me,code,emit,status){
     default:return!0}   /* hands, signing, speaking, state, teach_landmarks: UI-only, the service works from frames */
     return raw(m)}
   function hello(){status("open"),raw({type:"ui_ready",view:"phone"}),raw({type:"settings",language:INS.lang(),voice:$m()}),INS.mode==="live"&&raw({type:"session",state:INS.isLive()?"live":"paused"})}
-  function sendFrame(){const o=INS.cam();if(!ws||ws.readyState!==1||!INS.isLive()||!o||o.state!=="on")return;const v=o.video;if(v.readyState<2||!v.videoWidth||ws.bufferedAmount>512*1024)return;
+  function sendFrame(){const o=INS.cam();if(viewer||!ws||ws.readyState!==1||!INS.isLive()||!o||o.state!=="on")return;const v=o.video;if(v.readyState<2||!v.videoWidth||ws.bufferedAmount>512*1024)return;
     const k=Math.min(1,640/v.videoWidth),w=Math.round(v.videoWidth*k),h=Math.round(v.videoHeight*k);grab.width!==w&&(grab.width=w),grab.height!==h&&(grab.height=h),grab.getContext("2d").drawImage(v,0,0,w,h);
     const u=grab.toDataURL("image/jpeg",.7);ws.send(JSON.stringify({type:"frame",jpeg:u.slice(u.indexOf(",")+1),w,h,ts:Date.now()}))}
   const conn={send:out,close(){closed=!0,clearInterval(timer),ws&&ws.close()}};INS.conn=conn;
   if(INS.mode==="bridge")return bridgeHandlers.onMessage=j=>{let m;try{m=typeof j=="string"?JSON.parse(j):j}catch{return}incoming(m)},attachBridge(),setTimeout(hello,0),conn;
-  const open=c=>{if(closed)return;try{ws=new WebSocket(`${location.protocol==="https:"?"wss":"ws"}://${location.host}/ws?room=${encodeURIComponent(c)}&role=signer&name=${encodeURIComponent(me.name)}`)}catch{return void setTimeout(()=>open(c),2e3)}
+  const open=c=>{if(closed)return;try{ws=new WebSocket(`${location.protocol==="https:"?"wss":"ws"}://${location.host}/ws?room=${encodeURIComponent(c)}&role=${viewer?"participant":"signer"}&name=${encodeURIComponent(me.name)}`)}catch{return void setTimeout(()=>open(c),2e3)}
     ws.onopen=hello,ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch{return}incoming(m)};
-    ws.onclose=e=>{if(closed)return;if(e.code===4e3)return closed=!0,status("lost"),kn("This room is now open in another window, so this one stopped");status("lost"),setTimeout(()=>open(c),2e3)}};
-  const go=c=>{c=String(c).trim().toUpperCase(),INS.setCode(c);try{const u=new URL(location.href);u.searchParams.get("room")!==c&&(u.searchParams.set("room",c),history.replaceState(null,"",u.toString()))}catch{}open(c)};
+    ws.onclose=e=>{if(closed)return;if(e.code===4e3)return closed=!0,status("lost"),kn("Someone else joined as the signer, so this page stopped. Rejoin to take over");if(e.code===4404)return closed=!0,status("lost"),kn(`There's no room ${c} right now. Check the link, or ask the signer to start it`);status("lost"),setTimeout(()=>open(c),2e3)}};
+  const go=c=>{c=String(c).trim().toUpperCase(),INS.setCode(c);if(!INS.joinCode)try{const u=new URL(location.href);u.searchParams.get("room")!==c&&(u.searchParams.set("room",c),history.replaceState(null,"",u.toString()))}catch{}open(c)};
   const create=()=>{closed||fetch(`${location.origin}/rooms`,{method:"POST"}).then(r=>{if(!r.ok)throw Error(`HTTP ${r.status}`);return r.json()}).then(j=>{if(!j||!j.code)throw Error("no code");go(j.code)}).catch(()=>{status("lost"),setTimeout(create,2e3)})};
   status("connecting"),code?go(code):create(),timer=setInterval(sendFrame,100);return conn}
 ```
 
 ### N2: Transport: off the mock, T3() (the UI's connect) goes to insyncConnect(); the mock path is unchanged
 
-Offset 22310620.
+Offset 22313642.
 
 Old:
 ```js
@@ -1584,7 +1624,7 @@ function T3(n,e,t,i){if(INS.mode!=="mock")return insyncConnect(n,e,t,i);{
 
 ### N3: Voices: the voice picker also works in the app's WebView (no speechSynthesis there) once the bridge sends its native voice list
 
-Offset 22317471.
+Offset 22320493.
 
 Old:
 ```js
@@ -1597,7 +1637,7 @@ ga="speechSynthesis"in window||!!(window.insync&&window.insync.native)
 
 ### N4: Browser voices are only read where speechSynthesis exists
 
-Offset 22318045.
+Offset 22321067.
 
 Old:
 ```js
@@ -1610,7 +1650,7 @@ New:
 
 ### N5: Browser voice list never replaces the app's native list
 
-Offset 22317815.
+Offset 22320837.
 
 Old:
 ```js
@@ -1623,7 +1663,7 @@ function Ym(){if(INS.nativeVoices)return;Rr=
 
 ### N6: Speaking (voice preview) goes through insync.speak(text) in the app
 
-Offset 22318160.
+Offset 22321182.
 
 Old:
 ```js
@@ -1636,7 +1676,7 @@ function p0(n,e=Rr.find(t=>t.voiceURI===qs)){const nb=insyncBridge();if(nb){try{
 
 ### N7: Same for N3() (speaks with an end callback): native speak, callback after an estimate
 
-Offset 22318508.
+Offset 22321530.
 
 Old:
 ```js
@@ -1649,7 +1689,7 @@ function N3(n,e,t){const nb=insyncBridge();if(nb){try{nb.speak(n)}catch{}return 
 
 ### N8: Cancel speech only where speechSynthesis exists
 
-Offset 22318890.
+Offset 22321912.
 
 Old:
 ```js
@@ -1660,9 +1700,9 @@ New:
 function Km(){"speechSynthesis"in window&&speechSynthesis.cancel()}
 ```
 
-### N9: Self view camera: never getUserMedia in bridge mode (the app owns the camera)
+### N9: Self view camera: never getUserMedia in bridge mode (the app owns the camera) or as a participant (no webcam needed)
 
-Offset 22323235.
+Offset 22326257.
 
 Old:
 ```js
@@ -1670,12 +1710,12 @@ async start(){var e;if(this.stream)return!0;
 ```
 New:
 ```js
-async start(){var e;if(INS.mode==="bridge")return this.state="off",!1;if(this.stream)return!0;
+async start(){var e;if(INS.mode==="bridge"||INS.viewer)return this.state="off",!1;if(this.stream)return!0;
 ```
 
 ### N10: Self view overlay without a video (bridge): draw in the app's frame shape (504x896) instead of 4:3
 
-Offset 22325291.
+Offset 22328325.
 
 Old:
 ```js
@@ -1688,7 +1728,7 @@ s=this.video.videoWidth||INS.frame.w,o=this.video.videoHeight||INS.frame.h
 
 ### N11: One-laptop mode (?split=1) is a mock demo: its iframes get mock=1
 
-Offset 22336990.
+Offset 22340024.
 
 Old:
 ```js
@@ -1701,7 +1741,7 @@ i.src=`?role=${e}&name=${t}&mock=1`
 
 ### N12: Join screen: the in-browser hand tracker (MediaPipe from the CDN) only loads with the mock
 
-Offset 22314404.
+Offset 22317426.
 
 Old:
 ```js
@@ -1714,7 +1754,7 @@ New:
 
 ### N13: Join submit off the mock: no demo room code (empty = POST /rooms), name fallback 'Signer'
 
-Offset 22314115.
+Offset 22317137.
 
 Old:
 ```js
@@ -1725,9 +1765,9 @@ New:
 const S=o.value.trim()||(INS.mode==="mock"?rl[l]:"Signer"),M=INS.mode==="mock"?a.value.trim()||"alm-7k2-q9p":a.value.trim().toUpperCase();
 ```
 
-### N14: Join submit off the mock: this page is always the signer; header shows InSync until the code is known
+### N14: Join submit off the mock: the signer, except at /join/CODE where the role choice (I speak = participant, default / I sign = signer) is kept
 
-Offset 22314312.
+Offset 22317334.
 
 Old:
 ```js
@@ -1735,7 +1775,7 @@ e({name:S,role:l,room:M
 ```
 New:
 ```js
-e({name:S,role:INS.mode==="mock"?l:"sign",room:M
+e({name:S,role:INS.mode==="mock"||INS.joinCode?l:"sign",room:M
 ```
 
 ### N15: Avatar queue accepts fingerspelling too (enqueue(signs, letters)), like play()
@@ -1753,7 +1793,7 @@ enqueue(e,t=[]){if(this.index<0)return this.play(e,t);this.items.push(...Dm(e,t)
 
 ### N16: avatar_play: pass the fingerspelling (insyncConnect lowercases labels; words not in the avatar table are fingerspelled)
 
-Offset 22350533.
+Offset 22353581.
 
 Old:
 ```js
@@ -1766,7 +1806,7 @@ case"avatar_play":le(),s.enqueue(x.signs,x.fingerspell||[]);
 
 ### N17: Unknown sign off the mock: only 'Add a sign' (the composer is for the person next to the signer, not the signer's own words)
 
-Offset 22351378.
+Offset 22354426.
 
 Old:
 ```js
@@ -1779,7 +1819,7 @@ New:
 
 ### N18: Sentence off the mock: no 'Not what I meant' (it would be sent as the phone mic's words)
 
-Offset 22350694.
+Offset 22353742.
 
 Old:
 ```js
@@ -1792,7 +1832,7 @@ h.mock?[yt("link","Not what I meant",Or)]:[]
 
 ### N19: teach_progress passes the message on (take N of M)
 
-Offset 22351440.
+Offset 22354488.
 
 Old:
 ```js
@@ -1805,7 +1845,7 @@ case"teach_progress":Ze.takeDone(x);
 
 ### N20: Room entry: the local hand tracker only loads with the mock (off the mock the overlay is the service's landmarks)
 
-Offset 22352571.
+Offset 22355619.
 
 Old:
 ```js
@@ -1816,9 +1856,9 @@ New:
 h.mock&&o.loadTracker(),h.send({type:"voice"
 ```
 
-### N21: Hooks the InSync block needs from the room: live/paused, the self-view camera, and setCode() (room header, info popover with the join link + Copy join link, empty-room card, join form code)
+### N21: Hooks the InSync block needs from the room: live/paused, the self-view camera, and setCode() (room header, header Copy join link button, info popover with the join link + Copy join link, empty-room card, join form code)
 
-Offset 22351686.
+Offset 22354734.
 
 Old:
 ```js
@@ -1826,12 +1866,12 @@ const Ln=R3(s,()=>Vi.show())
 ```
 New:
 ```js
-INS.isLive=()=>we,INS.cam=()=>o,INS.setCode=x=>{INS.code=c=x,ee("joinRoom").value=x,ee("roomName").textContent=`Room ${x}`,It.textContent="",It.append(te("p","count",`Room code ${x}`),insyncLinkLine(x),yt("act small","Copy join link",()=>insyncCopy(x)),te("p",void 0,"Experimental. The avatar signs one sign at a time, and Deaf users haven't tested it yet. For interviews, medical or legal appointments, book a qualified interpreter.")),z()};const Ln=R3(s,()=>Vi.show())
+INS.isLive=()=>we,INS.cam=()=>o,INS.setCode=x=>{INS.code=c=x,ee("joinRoom").value=x,ee("roomName").textContent=`Room ${x}`,ee("copyLinkTop").hidden=!x,ee("copyLinkTop").onclick=()=>insyncCopy(x),It.textContent="",It.append(te("p","count",`Room code ${x}`),insyncLinkLine(x),yt("act small","Copy join link",()=>insyncCopy(x)),te("p",void 0,"Experimental. The avatar signs one sign at a time, and Deaf users haven't tested it yet. For interviews, medical or legal appointments, book a qualified interpreter.")),z()};const Ln=R3(s,()=>Vi.show())
 ```
 
 ### N22: Start: bridge -> straight into the room (the app has its own onboarding and creates the room); live -> the join screen as the Start card; mock -> as before (landing / ?role=)
 
-Offset 22356048.
+Offset 22359168.
 
 Old:
 ```js
@@ -1844,7 +1884,7 @@ b(),insyncBoot(()=>{Bh.get("role")||Bh.get("join")?Vi.show():Ln.show()},()=>Vi.s
 
 ### N23: The 2-minute idle auto-pause only runs with the mock
 
-Offset 22345289.
+Offset 22348337.
 
 Old:
 ```js
@@ -1857,7 +1897,7 @@ i.hidden||!we||!Pe||!h.mock||Ze.open
 
 ### N24: Signer's Mic button off the mock = 'someone next to me': browser SpeechRecognition (live) or insync.listen (bridge) -> speech_text; the mic level meter (getUserMedia audio) only with the mock
 
-Offset 22345532.
+Offset 22348580.
 
 Old:
 ```js
@@ -1870,7 +1910,7 @@ const x=(l.role==="speak"||!h.mock)&&l.mic&&we;INS.mode==="bridge"?insyncListen(
 
 ### N25: Teach off the mock: takes come from the service (the 'glasses' path: teach_start / teach_progress), never the studio's own camera
 
-Offset 22330397.
+Offset 22333445.
 
 Old:
 ```js
@@ -1883,7 +1923,7 @@ INS.upTakes=0,f=n.mock?"camera":"glasses",e.isLive()||e.goLive()
 
 ### N26: Teach off the mock: the studio shows the live webcam (live mode) instead of opening its own camera and tracker
 
-Offset 22330519.
+Offset 22333567.
 
 Old:
 ```js
@@ -1896,7 +1936,7 @@ n.mock?(Xe(),We().then(()=>{_==="blocked"&&n.mock&&G()&&(f="glasses",E="No camer
 
 ### N27: Take timeout off the mock: 15 s (sign, then hands down), and the service's takes are reset with teach_stop {label:""}
 
-Offset 22328709.
+Offset 22331757.
 
 Old:
 ```js
@@ -1909,7 +1949,7 @@ H=window.setTimeout(()=>{R="idle",n.mock||(n.send({type:"teach_stop",label:""}),
 
 ### N28: Off the mock a take counts when the service says so (teach_progress), whatever the page saw of the hands
 
-Offset 22329081.
+Offset 22332129.
 
 Old:
 ```js
@@ -1922,7 +1962,7 @@ const v=Oh(F)||(n.mock?null:[]);if(!v)return
 
 ### N29: Start over / redo resets the upload count too (it already sends teach_stop {label:""})
 
-Offset 22326188.
+Offset 22329236.
 
 Old:
 ```js
@@ -1935,7 +1975,7 @@ function ae(){M.length&&f==="glasses"&&n.send({type:"teach_stop",label:""}),M=[]
 
 ### N30: Save off the mock: fewer than 2 live takes (video uploads, already saved by POST /teach/upload) -> reset the service's takes, re-send settings so the service reloads the library, finish; otherwise teach_stop {label} and wait for sign_learned (10 s timeout, his W3)
 
-Offset 22329927.
+Offset 22332975.
 
 Old:
 ```js
@@ -1948,7 +1988,7 @@ function U(){if(!n.mock&&M.length-INS.upTakes<z3)return n.send({type:"teach_stop
 
 ### N31: Step labels off the mock: Name it / Record it twice / Save it (no local test)
 
-Offset 22331218.
+Offset 22334266.
 
 Old:
 ```js
@@ -1961,7 +2001,7 @@ New:
 
 ### N32: After two takes off the mock: 'WORD is recorded twice' with Save sign / Record again instead of the local DTW test
 
-Offset 22332575.
+Offset 22335623.
 
 Old:
 ```js
@@ -1974,7 +2014,7 @@ X.append(st(),oe),pe&&!n.mock)oe.textContent=`${v} is recorded twice`,X.appendCh
 
 ### N33: No shutter on that save step off the mock
 
-Offset 22332428.
+Offset 22335476.
 
 Old:
 ```js
@@ -1987,7 +2027,7 @@ c.hidden=P!==null||f==="video"||pe&&!n.mock
 
 ### N34: Take guidance off the mock: sign, then hands down to finish (the service ends the take when the sign ends)
 
-Offset 22334050.
+Offset 22337098.
 
 Old:
 ```js
@@ -2000,7 +2040,7 @@ R==="recording"?n.mock?"Recording. Sign at your normal pace":"Sign now, then put
 
 ### N35: Video upload is offered off the mock too
 
-Offset 22334209.
+Offset 22337257.
 
 Old:
 ```js
@@ -2013,7 +2053,7 @@ f==="camera"||!n.mock){const qe=te("label","upl")
 
 ### N36: Video upload off the mock: POST <origin or insync.serviceBase>/teach/upload (label, file, language); {ok:true} counts as one take
 
-Offset 22329418.
+Offset 22332466.
 
 Old:
 ```js
@@ -2026,7 +2066,7 @@ async function Ye(v){if(he())return;if(!n.mock)return R="upload",E="Uploading yo
 
 ### N37: Studio status off the mock: no 'Simulated signing'
 
-Offset 22327569.
+Offset 22330617.
 
 Old:
 ```js
@@ -2039,7 +2079,7 @@ v=S.length?"Hand found":n.mock?"Simulated signing":"Show your hands to the camer
 
 ### N38: Studio overlay: use the video's shape when there is one (live webcam), else the app's frame shape
 
-Offset 22327354.
+Offset 22330402.
 
 Old:
 ```js
@@ -2052,7 +2092,7 @@ q=s.videoWidth||(f==="glasses"?INS.frame.w:4),pe=s.videoHeight||(f==="glasses"?I
 
 ### N39: Studio: mirror the live webcam like a selfie
 
-Offset 22332579.
+Offset 22335627.
 
 Old:
 ```js
@@ -2065,7 +2105,7 @@ r.classList.toggle("mirror",f==="camera"||!!s.srcObject)
 
 ### N40: teach_progress off the mock shows 'Take N of M recorded'
 
-Offset 22335891.
+Offset 22338939.
 
 Old:
 ```js
@@ -2078,7 +2118,7 @@ takeDone(x){f==="glasses"&&R==="recording"&&(ke(),!n.mock&&x&&x.take&&(u==="capt
 
 ### N41: Empty room off the mock: the code, the join link and a big Copy join link (or 'Creating your room…' until the code is known)
 
-Offset 22339896.
+Offset 22342944.
 
 Old:
 ```js
@@ -2103,6 +2143,20 @@ New:
             <button role="menuitemcheckbox" type="button" id="mAloud" aria-checked="true" hidden><svg class="i"><use href="#i-speaker" /></svg><span>Read my signs aloud</span></button>
 ```
 
+### N44: Header: a Copy join link button next to the room code (hidden with the mock; shown by setCode for signer and participants)
+
+Offset 268769.
+
+Old:
+```js
+<button class="round small" id="infoBtn" type="button" aria-label="Meeting details" aria-expanded="false"><svg class="i"><use href="#i-info" /></svg></button>
+```
+New:
+```js
+<button class="round small" id="infoBtn" type="button" aria-label="Meeting details" aria-expanded="false"><svg class="i"><use href="#i-info" /></svg></button>
+            <button class="round small" id="copyLinkTop" type="button" aria-label="Copy join link" title="Copy join link" hidden><svg class="i"><use href="#i-copy" /></svg></button>
+```
+
 ### N43: Rename every visible 'Almero' to 'InSync' (title, landing, roles, mark label, li constant used in all UI strings, hero, tour). The lowercase BroadcastChannel name and the insync.* storage keys are unchanged
 
 All 14 occurrences of `Almero` (title, landing x6, join role text, room mark `aria-label`, `const li="Almero"`, hero lines x2, tour x3) -> `InSync`.
@@ -2112,7 +2166,7 @@ All 14 occurrences of `Almero` (title, landing x6, join role text, room mark `ar
 - `html.parser` parses the file; both inline scripts pass `node --check` (the module checked as `.mjs`).
 - Headless Chrome against the local service (`CONFIDENCE_THRESHOLD=0`, `ALMERO_STT=text`, Claude + ElevenLabs on), fake camera = the wave clip (converted to y4m):
   - **Live `/`**: Start card (Start your room, NSL default, ASL/BSL selectable, Read my signs aloud checked, roles hidden, title InSync).
-    Start -> `POST /rooms`, address bar `/?room=WCTJ`, header "Room WCTJ", status Live, empty-room card "WCTJ / localhost:8000/join/WCTJ / Copy join link",
+    Start -> `POST /rooms`, address bar `/?room=WCTJ`, header "Room WCTJ" + Copy join link button, status Live, empty-room card "WCTJ / localhost:8000/join/WCTJ / Copy join link",
     `GET /rooms/WCTJ` lists Amaka as signer, page sends `ui_ready {view:phone}`, `settings {language:nsl}`, `session live`, then `frame` 480x480 at ~10 fps;
     `landmarks` with hands come back and the hand skeleton is drawn over the mirrored webcam on the self tile.
   - **Teach "hello"**: studio shows the webcam (mirrored) with the service's landmarks and "Hand found"; 3-2-1, `teach_start` -> `teach_progress 1/2`
@@ -2124,7 +2178,15 @@ All 14 occurrences of `Almero` (title, landing x6, join role text, room mark `ar
     HELLO in the NSL library the matcher picks WAVE; with HELLO alone (BSL library) the same clip gives `sign_recognized HELLO` -> `sentence "Hello!"`.
   - **Participant text**: `replay.py --participant Bob --speech "Welcome"` -> caption "Bob: Welcome", `avatar_play {signs:[HELLO]}` -> avatar tile "Signing Bob's words".
   - Pause -> `session paused`, webcam track released, no frames; resume -> frames again. Typed text -> `speech_text` -> caption "Phone mic: ...".
+  - **Two pages** (signer at `/` with the wave camera, participant in a second Chrome at `/join/CKSY`): join screen "Join the room", code CKSY from the path, roles shown with
+    I speak selected, camera off, Join. Participant: `role=participant`, sends only `ui_ready` / `settings` / `session` / `speech_text` (no frames, no video getUserMedia in the room);
+    header "Room CKSY" + Copy join link; tiles: signer tile pinned "Amaka, signs via InSync", "What Amaka sees" (avatar), "You"; Add a sign / Pause / Camera hidden.
+    The signer's hand traces are drawn on the signer's dark tile with the "Signing" chip and "Amaka is signing. Please wait"; captions "Amaka, via InSync: Hello!" with
+    the ElevenLabs audio played. Participant types "Welcome" -> the signer gets `caption {speaker: Bob, text: Welcome}` and `avatar_play [HELLO]`, avatar "Signing Bob's words";
+    the participant's Transcript panel opens over the side with the conversation. A third page at `/join/CKSY` choosing I sign (Zed) -> `GET /rooms` lists Zed as signer and
+    Bob, Zed streams frames, the old signer page shows Reconnecting with "Someone else joined as the signer…", Bob's People list shows Zed (Signs).
   - **Bridge** (fake `window.insync`, defined before the scripts and arriving 250 ms later with `insync-ready`): straight into the room, `ui_ready {view:phone}` + `settings`,
     no `POST /rooms`, no `getUserMedia`; `room` -> "Room ABCD", People "Amaka (you) / Bob"; landmarks drawn; `avatar_play [HELLO, LAGOS]` -> hello + L-A-G-O-S fingerspelled;
     `sentence` -> `insync.speak`, `speech_audio` ignored; Mic -> `insync.listen`, `speechResult` -> `speech_text`; Pause -> `session paused` + `insync.setSession('paused')`.
   - **`?mock=1`**: his landing, join (roles, demo code), room, typed text and Play demo work as delivered; no `/rooms`, no WebSocket.
+- Backend: `tests/test_rooms.py` 19/19, `tests/test_meeting.py --seconds 20` PASS.

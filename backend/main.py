@@ -86,6 +86,13 @@ def signer_page():
 
 @app.get("/join/{code}")
 def join_page(code: str):
+    """The join link opens the same meeting-room page as the signer, in participant mode (Speak / Sign choice)."""
+    return FileResponse(Path(__file__).parent.parent / "web" / "dist" / "index.html", headers=NO_CACHE)
+
+
+@app.get("/join-lite/{code}")
+def join_lite_page(code: str):
+    """The old lightweight participant page (captions and voice only), kept as a fallback."""
     return FileResponse(Path(__file__).parent / "static" / "join.html", headers=NO_CACHE)
 
 

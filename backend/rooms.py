@@ -78,6 +78,8 @@ class Room:
             await self.to_participants(m)
         elif m["type"] == "speech_audio":   # ElevenLabs voice for the signer's sentence: participants play it
             await self.to_participants(m)
+        elif m["type"] == "landmarks":   # the signer's hand traces, drawn on the signer's tile for participants
+            await self.to_participants(m)
 
     # --- Joining and leaving ---
 

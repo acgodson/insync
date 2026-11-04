@@ -118,7 +118,7 @@ class Session:
         ts = max(int(m.get("ts") or 0), self.last_ts + 1)
         self.last_ts = ts
         hands = await asyncio.to_thread(pipeline.detect_hands, self.landmarker, image, ts)
-        await self.emit("landmarks", hands=[hd for hd in pipeline.head_relative(hands, w, h) if hd["visible"]])
+        await self.emit("landmarks", hands=[hd for hd in pipeline.head_relative(hands, w, h) if hd["visible"]], w=w, h=h)
         self.frames_in += 1
         self.frames_total = getattr(self, "frames_total", 0) + 1
         if self.frames_total == 1 or self.frames_total % 100 == 0:
