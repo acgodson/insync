@@ -15,6 +15,7 @@ import rooms
 from toolkit import segment
 
 app = FastAPI(title="InSync service")
+NO_CACHE = {"Cache-Control": "no-cache, must-revalidate"}   # browsers must re-check the HTML after each deploy
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])  # uploads from the app's WebView
 
 
@@ -69,18 +70,18 @@ def get_room(code: str):
 @app.get("/")
 def root_page():
     """The hosted signer UI is the front door: open it in any browser with a webcam."""
-    return FileResponse(Path(__file__).parent.parent / "web" / "dist" / "index.html")
+    return FileResponse(Path(__file__).parent.parent / "web" / "dist" / "index.html", headers=NO_CACHE)
 
 
 @app.get("/app")
 def signer_page():
     """Signer web UI (web/dist/index.html) for the phone's prod mode or a laptop browser (?service=...)."""
-    return FileResponse(Path(__file__).parent.parent / "web" / "dist" / "index.html")
+    return FileResponse(Path(__file__).parent.parent / "web" / "dist" / "index.html", headers=NO_CACHE)
 
 
 @app.get("/join/{code}")
 def join_page(code: str):
-    return FileResponse(Path(__file__).parent / "static" / "join.html")
+    return FileResponse(Path(__file__).parent / "static" / "join.html", headers=NO_CACHE)
 
 
 # --- WebSocket: /ws?room=<code>&role=signer|participant&name=<name> ---
