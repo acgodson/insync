@@ -61,11 +61,14 @@ window.dispatchEvent(new Event('insync-ready'));
   bool _previewLarge = false;
   bool _mirror = false;
   int _lastSent = 0;
+  int _lastPreview = 0;
   int _sentInWindow = 0;
   double _fps = 0;
   String _lastType = '';
   String _nativeStatus = '';
   Timer? _fpsTimer;
+  Timer? _watchdog;
+  int _pageFailures = 0;
 
   @override
   void initState() {
@@ -113,6 +116,22 @@ window.dispatchEvent(new Event('insync-ready'));
     _control.invokeMethod('start', {'fallback': true});
     _fpsTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       if (mounted) setState(() { _fps = _sentInWindow / 2; _sentInWindow = 0; });
+    });
+    // WebView renderer watchdog: Android may kill the renderer under memory pressure, which
+    // leaves the page black. Ping the page; after two failed pings, reload it.
+    _watchdog = Timer.periodic(const Duration(seconds: 5), (_) async {
+      try {
+        final r = await _web?.runJavaScriptReturningResult('(window.insync && window.insync.native) ? 1 : 0')
+            .timeout(const Duration(seconds: 3));
+        _pageFailures = (r?.toString() == '1' || r?.toString() == '1.0') ? 0 : _pageFailures + 1;
+      } catch (_) {
+        _pageFailures++;
+      }
+      if (_pageFailures >= 2) {
+        _pageFailures = 0;
+        print('web: renderer unresponsive, reloading the page');
+        _loadUi();
+      }
     });
     if (mounted) setState(() {});
   }
@@ -169,7 +188,10 @@ window.dispatchEvent(new Event('insync-ready'));
       if (_live) {
         _service?.send({'type': 'frame', 'jpeg': base64Encode(event), 'w': size[0], 'h': size[1]});
       }
-      setState(() => _preview = event);
+      if (now - _lastPreview >= 250) {
+        _lastPreview = now;
+        setState(() => _preview = event);
+      }
     } else if (event is String) {
       print('native: $event');
       setState(() {
@@ -336,6 +358,7 @@ window.dispatchEvent(new Event('insync-ready'));
   void dispose() {
     _frameSub?.cancel();
     _fpsTimer?.cancel();
+    _watchdog?.cancel();
     _service?.close();
     _control.invokeMethod('stop');
     super.dispose();
@@ -357,7 +380,8 @@ window.dispatchEvent(new Event('insync-ready'));
         clipBehavior: Clip.antiAlias,
         child: Transform.flip(
           flipX: _mirror,
-          child: Image.memory(img, gaplessPlayback: true, fit: BoxFit.cover),
+          child: Image.memory(img, gaplessPlayback: true, fit: BoxFit.cover,
+              cacheWidth: _previewLarge ? 440 : 160),
         ),
       ),
     );
