@@ -275,7 +275,8 @@ window.dispatchEvent(new Event('insync-ready'));
     if (s.startsWith('Waiting for glasses')) return 'Waiting for glasses (wear them)';
     if (s.startsWith('No glasses')) return 'No glasses: phone camera';
     if (s.startsWith('Registering')) return 'Approve InSync in the Meta AI app';
-    if (s.startsWith('No eligible')) return 'Glasses not found';
+    if (s.startsWith('Glasses not found')) return 'Looking for glasses';
+    if (s.startsWith('Reconnecting')) return 'Reconnecting to glasses';
     return s.isEmpty ? 'Starting camera' : s;
   }
 
@@ -288,7 +289,7 @@ window.dispatchEvent(new Event('insync-ready'));
           ListTile(
             leading: const Icon(Icons.visibility),
             title: const Text('Use glasses'),
-            subtitle: const Text('Wear them and keep Meta AI connected'),
+            subtitle: const Text('Default. Wear them and keep Meta AI connected'),
             onTap: () { Navigator.pop(ctx); setState(() => _nativeStatus = 'Waiting for glasses'); _control.invokeMethod('source', {'to': 'glasses'}); },
           ),
           ListTile(

@@ -154,9 +154,10 @@ class MainActivity : FlutterFragmentActivity() {
     }
     scope.launch {
       if (mockActive) { startSession(); return@launch }
-      if (fallback && preferredSource == "phone") { startMock(); return@launch }
-      if (fallback && preferredSource == "glasses") fallback = false   // wait for the real glasses (20 s)
-      if (fallback && Wearables.registrationState.value != RegistrationState.REGISTERED) { startMock(); return@launch }
+      // Glasses are the default and the only automatic source (same flow as Almero). The phone
+      // camera (Mock Device Kit) is used only when the user chose it from the status line.
+      if (preferredSource == "phone") { startMock(); return@launch }
+      fallback = false
       if (Wearables.registrationState.value != RegistrationState.REGISTERED) {
         status("Registering with Meta AI: approve in the Meta AI app")
         Wearables.startRegistration(this@MainActivity)
@@ -194,8 +195,7 @@ class MainActivity : FlutterFragmentActivity() {
   // Session
   private suspend fun startSession() {
     if (session != null) { status("Already running"); return }
-    // Registered glasses get 8 s to show up (they must be worn); unregistered phones fall back after 3 s
-    val attempts = if (!fallback || mockActive) 20 else if (Wearables.registrationState.value == RegistrationState.REGISTERED) 8 else 3
+    val attempts = 20
     repeat(attempts) { attempt ->
       val result = Wearables.createSession(AutoDeviceSelector())
       if (result.fold(onSuccess = { true }, onFailure = { _, _ -> false })) {
@@ -205,7 +205,8 @@ class MainActivity : FlutterFragmentActivity() {
       if (attempt == 0) status("Waiting for glasses (wear them, keep Meta AI connected)")
       delay(1000)
     }
-    if (fallback && !mockActive) startMock() else status("No eligible device found after ${attempts}s")
+    status("Glasses not found yet: still looking (wear them, keep Meta AI connected)")
+    if (!mockActive) scheduleRetry()   // keep looking every 3 s until the glasses appear
   }
 
   // Manual source switch (tap the status line in the app): glasses <-> phone camera.
@@ -214,8 +215,18 @@ class MainActivity : FlutterFragmentActivity() {
   private fun switchSource(glasses: Boolean) {
     getSharedPreferences("insync", MODE_PRIVATE).edit().putString("source", if (glasses) "glasses" else "phone").apply()
     stop()
-    startActivity(Intent(this, RestartActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
-    Runtime.getRuntime().exit(0)
+    if (glasses && mockActive) {
+      // The mock kit cannot be undone inside a running process: relaunch and come back on the glasses
+      startActivity(Intent(this, RestartActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
+      Runtime.getRuntime().exit(0)
+      return
+    }
+    scope.launch {
+      repeat(30) { if (session == null) return@repeat; delay(100) }
+      clearSession()
+      wantStream = true
+      if (glasses) connectAndStream() else if (mockActive) startSession() else startMock()
+    }
   }
 
   private val preferredSource get() = getSharedPreferences("insync", MODE_PRIVATE).getString("source", "auto")
